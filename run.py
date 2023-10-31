@@ -5,6 +5,8 @@ import json
 from functools import partial
 from copy import deepcopy
 from PyPDF2 import PdfReader
+import fitz
+import shutil
 from prompt import (prompt_to_parse_cv, prompt_to_rewrite_task, prompt_to_add_skills, prompt_to_write_description,
                     post_parse_cv, post_rewrite_task, post_add_skills, post_write_description)
 from langchain.schema import (
@@ -14,7 +16,7 @@ from langchain.chat_models import ChatOpenAI
 
 # initialize chat model
 chat = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0.0, 
-                  openai_api_key=st.secrets["openai_api_key"])
+                  openai_api_key=st.secrets['openai_api_key'])
 
 def write_description(i):
     st.toast("Summarizing description ...", icon='✍️')
@@ -98,9 +100,18 @@ def extract_text_from_pdf(uploaded_file):
 
 
 def display_pdf(uploaded_file):
-    base64_pdf = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
-    pdf_display = F'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height=600px type="application/pdf"></iframe>'
-    st.markdown(pdf_display, unsafe_allow_html=True)
+
+    os.makedirs('./tmp_output', exist_ok=True)
+    doc = fitz.open(stream=uploaded_file.read())
+    for i, page in enumerate(doc):
+        pix = page.get_pixmap(dpi=300)  # render page to an image
+        pix.save(f"./tmp_output/page_{i}.png")
+    st.image([f"./tmp_output/page_{i}.png" for i in range(len(doc))])
+
+    # wait until can display pdf on steamlit cloud
+    # base64_pdf = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
+    # pdf_display = F'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height=600px type="application/pdf"></iframe>'
+    # st.markdown(pdf_display, unsafe_allow_html=True)
     st.session_state['uploaded'] = True
 
 def reset_description(i):
@@ -172,6 +183,8 @@ def export_resume():
 
 def uploader_callback():
     st.toast("Resume uploaded.", icon="📑")
+    shutil.rmtree("./tmp_output", True )
+
     st.session_state['parsed_pdf'] = dict()
     st.session_state['processed'] = False
 
