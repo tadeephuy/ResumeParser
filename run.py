@@ -1,4 +1,5 @@
 import streamlit as st
+import os
 import base64
 import json
 from functools import partial
@@ -13,8 +14,7 @@ from langchain.chat_models import ChatOpenAI
 
 # initialize chat model
 chat = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0.0, 
-                  openai_api_key="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")
-
+                  openai_api_key="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")
 
 def write_description(i):
     st.toast("Summarizing description ...", icon='✍️')
@@ -165,7 +165,8 @@ def export_resume():
         "skills": export_skills
     }
     
-    with open('export_resume.json', 'w', encoding='utf-8') as f:
+    os.makedirs('output', exist_ok=True)
+    with open('./output/export_resume.json', 'w', encoding='utf-8') as f:
         json.dump(export, f, ensure_ascii=False, indent=4)
     st.toast("Resume exported!", icon="🎯")
 
