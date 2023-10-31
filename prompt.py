@@ -3,7 +3,7 @@ Field	Subfield	Description	Key name	Format
 Name	N/A	Name of the candidate	candidate_name	string
 Current Title	N/A	Current job title of the candidate	candidate_title	string
 Summary	N/A	A summary of the resume (generated)	summary	string
-Links	N/A	External links (Github, Linkedin, Scholars, etc.)	links	list of string
+Links	N/A	External internet links if available	links	list of string
 Languages			languages	list of dict
 	language	name of the language	lang	string
 	level	level of proficiency	lang_lvl	string
@@ -11,8 +11,8 @@ Work Experience			work_exp	list of dict
 	Timeline	From - To	work_timeline	tuple of int
 	Company	Company name	work_company	string
 	Title	Job title at the company	work_title	string
-	Description	A summary of experience, including tasks, technology used, team size, written in 1 paragraph	work_description	string
-	Responsibilities	Tasks/responsibilities done for this title, written in bullet points	work_responsibilities	list of string
+  Responsibilities	Responsibilities, achievements done, written in bullet points, copy from the resume work_responsibilities	list of string
+  Description Short summary of tasks, achievements, technology used, in maximum 30 words work_description	string
 Education			education	list of dict
 	Timeline	From - To	edu_timeline	tuple of int
 	School	School name	edu_school	string
@@ -22,7 +22,8 @@ Education			education	list of dict
 Projects			projects	list of dict
 	Timeline	From - To	project_timeline	tuple of int
 	Project name	Project name	project_name	string
-	Descriptions	Description of the project, can be the summary of the responsibilities, technology used, team size	project_description	string
+	Descriptions	Description of the project	project_description	string
+Certifications  N/A list of achieved certifications certifications  list of string
 Skills			skills or technologies used list of dict
 	Skill name	Name of the skill	skill_name	string
 	YOE	Year of experience, can be inferred	yoe	float
@@ -34,7 +35,6 @@ example = """
   "candidate_title": "Software Engineer",
   "summary": "Experienced software engineer with a passion for creating efficient and scalable solutions.",
   "links": [
-    "https://github.com/johndoe",
     "https://linkedin.com/in/johndoe"
   ],
   "languages": [
@@ -46,23 +46,22 @@ example = """
       "work_timeline": [2018, 2023],
       "work_company": "TechCorp",
       "work_title": "Senior Software Engineer",
-      "work_description": "Led a team of developers in designing and implementing critical features for the flagship product.",
       "work_responsibilities": [
         "Designed and implemented new features",
         "Optimized existing codebase for performance improvements",
         "Mentored junior developers"
-      ]
+      ],
+      "work_description": "Led a team of developers in designing and implementing critical features for the flagship product.",
     },
     {
       "work_timeline": [2015, 2018],
       "work_company": "CodeCrafters",
       "work_title": "Software Engineer",
-      "work_description": "Collaborated with cross-functional teams to deliver high-quality software solutions.",
       "work_responsibilities": [
         "Developed and maintained backend services",
-        "Participated in code reviews",
         "Collaborated with UX/UI designers for front-end development"
-      ]
+      ],
+      "work_description": "Collaborated with cross-functional teams to deliver high-quality software solutions.",
     }
   ],
   "education": [
@@ -81,6 +80,10 @@ example = """
       "project_description": "Designed and developed a mobile app for tracking personal expenses."
     }
   ],
+  "certifications": [
+    "IELTS 9.0",
+    "2023: PMI Agile Certified Practicioner"
+  ]
   "skills": [
     {"skill_name": "JavaScript", "yoe": 5},
     {"skill_name": "React", "yoe": 3}
@@ -107,7 +110,10 @@ def prompt_to_parse_cv(resume):
 
     You are a Senior Recruiter (SR) reading the resume.
     Parse the resume into the output json file following the example and template.
-    Refer to the input to avoid missing any information. Answer format:
+    Note: the field "responsibilities" should be copied exactly from the resume.
+    Note: if the description is not provided, write a summary for the field description.
+    
+    Answer format:
 
     SR:
     <output json>

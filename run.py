@@ -125,7 +125,7 @@ def reset_resp(i):
     st.session_state[f"work_responsibilities_{i}"] = resps_str
     st.toast('Responsibilities restored.', icon='🔄')
 
-def export_resume():
+def submit_form():
     export_work_exp = []
     for i in range(len(autofilled_work_exp)):
         ewe = {
@@ -164,22 +164,40 @@ def export_resume():
             "yoe": st.session_state[f"yoe_{i}"],
         }
         export_skills.append(es)
+    
+    export_languages = []
+    for i in range(len(autofilled_languages)):
+        el = {
+            "lang": st.session_state[f"lang_{i}"],
+            "lang_lvl": st.session_state[f"lang_lvl_{i}"],
+        }
+        export_languages.append(el)    
 
     export = {
         "candidate_name": st.session_state.candidate_name,
         "candidate_title": st.session_state.candidate_title,
         "summary": st.session_state.summary,
         "links": st.session_state.links.split('\n'),
+        "languages": export_languages,
         "work_exp": export_work_exp,
         "education": export_education,
         "projects": export_projects,
+        "certifications": st.session_state.certifications.split('\n'),
         "skills": export_skills
     }
-    
+    st.session_state['output_json'] = export
     os.makedirs('output', exist_ok=True)
     with open('./output/export_resume.json', 'w', encoding='utf-8') as f:
         json.dump(export, f, ensure_ascii=False, indent=4)
-    st.toast("Resume exported!", icon="🎯")
+    st.toast("Form submitted!", icon="🎯")
+
+def downloader_callback():
+    if st.session_state['output_json'] is None:
+        st.toast(":red[Submit the form first!]", icon="⚠️")
+        return
+    st.toast("New resume downloaded!", icon="🎯")
+    with open('./output/export_resume_doc.json', 'w', encoding='utf-8') as f:
+        json.dump(st.session_state['output_json'], f, ensure_ascii=False, indent=4)
 
 def uploader_callback():
     st.toast("Resume uploaded.", icon="📑")
@@ -187,6 +205,7 @@ def uploader_callback():
 
     st.session_state['parsed_pdf'] = dict()
     st.session_state['processed'] = False
+    st.session_state['output_json'] = None
 
 ##################################### INITIALIZE STATES ################################################
 def init_state(key, value):
@@ -196,6 +215,7 @@ def init_state(key, value):
 init_state('parsed_pdf', dict())
 init_state('uploaded', False)
 init_state('processed', False)
+init_state('output_json', None)
 ##################################### LAYOUT DEFINITION ################################################
 st.set_page_config(page_title="Resume Parser", page_icon="📑")
 st.title("📑 Resume Parser",)
@@ -249,56 +269,68 @@ if st.session_state['processed']:
         candidate_title = st.text_input('Title', value=st.session_state['parsed_pdf'].get('candidate_title', ""), key="candidate_title")
         summary = st.text_area("Summary", value=st.session_state['parsed_pdf'].get('summary', ""), key="summary")
         links = st.text_area("Links", "\n".join(st.session_state['parsed_pdf'].get('links', [])), key="links")
+        
+        languages = st.session_state['parsed_pdf'].get('languages', [])
+        autofilled_languages = deepcopy(languages)
+        c1, c2 = st.columns([3,2])
+        for i,lg in enumerate(languages):
+            visibility = "visible" if i == 0 else "hidden"
+            lang = c1.text_input("Language", languages[i].get("lang", ""), 
+                                        label_visibility=visibility, 
+                                        key=f"lang_{i}")
+            lang_lvl = c2.text_input("Level", languages[i].get("lang_lvl", ""), 
+                                        label_visibility=visibility, 
+                                        key=f"lang_lvl_{i}")
+            autofilled_languages[i] = {"lang": lang, "lang_lvl": lang_lvl}
 
     with st.expander(label="EXPERIENCE", expanded=True,):
         work_exp = st.session_state['parsed_pdf'].get('work_exp', [])
         autofilled_work_exp = deepcopy(work_exp)
-        if len(work_exp) > 0:
-            for i, we in enumerate(work_exp):
-                # company
-                autofilled_work_exp[i]["work_company"] = st.text_input(f"Company", 
-                                                                work_exp[i].get("work_company", ""), 
-                                                                key=f"work_company_{i}")
+        for i, we in enumerate(work_exp):
+            # company
+            autofilled_work_exp[i]["work_company"] = st.text_input(f"Company", 
+                                                            work_exp[i].get("work_company", ""), 
+                                                            key=f"work_company_{i}")
 
-                # timeline
-                c1, c2 = st.columns(2)
-                w_f = c1.text_input("From",
-                                    work_exp[i].get("work_timeline", [None,None])[0], 
-                                    key=f"work_timeline_from_{i}")
-                w_t = c2.text_input("To", 
-                                    work_exp[i].get("work_timeline", [None,None])[-1], 
-                                    key=f"work_timeline_to_{i}")
-                autofilled_work_exp[i]["work_timeline"] = [w_f, w_t]
+            # timeline
+            c1, c2 = st.columns(2)
+            w_f = c1.text_input("From",
+                                work_exp[i].get("work_timeline", [None,None])[0], 
+                                key=f"work_timeline_from_{i}")
+            w_t = c2.text_input("To", 
+                                work_exp[i].get("work_timeline", [None,None])[-1], 
+                                key=f"work_timeline_to_{i}")
+            autofilled_work_exp[i]["work_timeline"] = [w_f, w_t]
 
-                # title
-                autofilled_work_exp[i]["work_title"] = st.text_input(f"Title", 
-                                                                work_exp[i].get("work_title", ""), 
-                                                                key=f"work_title_{i}")
+            # title
+            autofilled_work_exp[i]["work_title"] = st.text_input(f"Title", 
+                                                            work_exp[i].get("work_title", ""), 
+                                                            key=f"work_title_{i}")
 
-                # description
-                autofilled_work_exp[i]["work_description"] = st.text_area(f"Description",
-                                                                    work_exp[i].get("work_description", ""),
-                                                                    height=150,
-                                                                    key=f"work_description_{i}",)
-                bc1, bc2 = st.columns(2, gap="large")
-                bc1.button("✍️ Rewrite", on_click=write_description, args=(i,), key=f"rewrite_button_desc_{i}")
-                bc2.button("🔄 Reset", on_click=reset_description, args=(i,), key=f"reset_button_desc_{i}")  
+            # description
+            autofilled_work_exp[i]["work_description"] = st.text_area(f"Description",
+                                                                work_exp[i].get("work_description", ""),
+                                                                height=150,
+                                                                key=f"work_description_{i}",)
+            bc1, bc2 = st.columns(2, gap="large")
+            bc1.button("✍️ Rewrite", on_click=write_description, args=(i,), key=f"rewrite_button_desc_{i}")
+            bc2.button("🔄 Reset", on_click=reset_description, args=(i,), key=f"reset_button_desc_{i}")  
 
-                # responsibilities
-                resps_list = work_exp[i].get("work_responsibilities", [])
-                height = min(50*len(resps_list) if len(resps_list) > 0 else 10, 300)
-                
-                resps_str = "\n".join([f"- {c}" for c in resps_list])
-                autofilled_work_exp[i]["work_responsibilities"] = st.text_area(f"Responsibilities",
-                                                                        resps_str,
-                                                                        height=height,
-                                                                        key=f"work_responsibilities_{i}")
+            # responsibilities
+            resps_list = work_exp[i].get("work_responsibilities", [])
+            height = min(50*len(resps_list) if len(resps_list) > 0 else 10, 300)
+            
+            resps_str = "\n".join([f"- {c}" for c in resps_list])
+            autofilled_work_exp[i]["work_responsibilities"] = st.text_area(f"Responsibilities",
+                                                                    resps_str,
+                                                                    height=height,
+                                                                    key=f"work_responsibilities_{i}")
 
-                bc1, bc2 = st.columns(2, gap="large")
-                bc1.button("✍️ Rewrite", on_click=rewrite_resp, args=(i,), key=f"rewrite_button_resp_{i}")
-                bc2.button("🔄 Reset", on_click=reset_resp, args=(i,), key=f"reset_button_resp_{i}")            
-                
-                st.markdown("""---""")
+            bc1, bc2 = st.columns(2, gap="large")
+            bc1.button("✍️ Rewrite", on_click=rewrite_resp, args=(i,), key=f"rewrite_button_resp_{i}")
+            bc2.button("🔄 Reset", on_click=reset_resp, args=(i,), key=f"reset_button_resp_{i}")            
+            
+            st.markdown("""---""")
 
     with st.expander(label="EDUCATION", expanded=True,):
         edus = st.session_state['parsed_pdf'].get('education', [])
@@ -363,7 +395,11 @@ if st.session_state['processed']:
                                                                 height=50,
                                                                 key=f"project_description_{i}",)
 
+
     with st.expander(label="SKILLS", expanded=True,):
+        certifications = st.session_state['parsed_pdf'].get('certifications', [])
+        certifications = st.text_area("Certifications", "\n".join(certifications), key="certifications")
+
         skills = st.session_state['parsed_pdf'].get("skills", [])
         autofilled_skills = deepcopy(skills)
         c1, c2 = st.columns([4,1])
@@ -394,7 +430,12 @@ if st.session_state['processed']:
                                         key=f"yoe_{i+offset}")
             autofilled_skills.append({"skill_name": skill_name, "yoe": yoe})
 
-    st.button("🖨️ Export", on_click=export_resume, key="export_1")
+    c1, c2 = st.columns(2, gap='large')
+    c1.button("Submit", on_click=submit_form, key="submit")
+    if st.session_state['output_json'] is not None:
+        download_data = json.dumps(st.session_state['output_json'])
+        c2.download_button("🖨️ Export file", data=download_data, file_name='export_doc.json',
+                           on_click=downloader_callback, key="export")
     status.update(label="Completed", state="complete", expanded=False)
 
 
