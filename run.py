@@ -14,7 +14,7 @@ from langchain.chat_models import ChatOpenAI
 
 # initialize chat model
 chat = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0.0, 
-                  openai_api_key="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")
+                  openai_api_key=st.secrets["openai_api_key "])
 
 def write_description(i):
     st.toast("Summarizing description ...", icon='✍️')
