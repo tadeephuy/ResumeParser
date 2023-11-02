@@ -7,7 +7,8 @@ from ..model.prompt_template import PARSING_CV_PROMPTING
 import streamlit as st
 
 PROMPT = PromptTemplate(
-    input_variables=["resume", "example", "template"], template=PARSING_CV_PROMPTING
+    input_variables=["resume", "example", "template"],
+    template=PARSING_CV_PROMPTING
 )
 CHAT = ChatOpenAI(
     model="gpt-3.5-turbo-16k",

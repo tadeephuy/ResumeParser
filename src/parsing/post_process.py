@@ -1,6 +1,28 @@
+from functools import lru_cache
 import json
 import os
 import streamlit as st
+from langchain.prompts.prompt import PromptTemplate
+from langchain.chat_models import ChatOpenAI
+from langchain.chains import LLMChain
+from ..model.prompt_template import WRITING_DESCRIPTION_PROMPTING
+
+REWRITE_DESCRIPTION_PROMPT = PromptTemplate(
+    input_variables=["title", "company", "description", "resp"],
+    template=WRITING_DESCRIPTION_PROMPTING
+)
+CHAT = ChatOpenAI(
+    model="gpt-3.5-turbo-16k",
+    temperature=0.0,
+    openai_api_key=st.secrets["openai_api_key"],
+)
+
+@lru_cache
+def chain_init(prompt_type):
+    return LLMChain(
+        llm = CHAT,
+        prompt = prompt_type
+    )
 
 def write_description(i):
     st.toast("Summarizing description ...", icon='✍️')

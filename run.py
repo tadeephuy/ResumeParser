@@ -33,13 +33,11 @@ elif (uploaded_file is not None):
     status = st.status("Processing the resume ... ", expanded=True) 
 
 if (uploaded_file is not None) and (not(st.session_state['processed'])):
-    #status.write("📝 Extracting text...")
     pdf = PdfReader(uploaded_file)
     pdf = '\n'.join([pdf.pages[c].extract_text() for c in range(len(pdf.pages))])
 
     status.write("👩‍💻 Analyzing the resume...")
     t1 = time.perf_counter(), time.process_time()
-    #parsed_cv = parsing_cv(uploaded_file.getvalue())
     parsed_cv = parsing_cv(pdf)
     t2 = time.perf_counter(), time.process_time()
     print({
