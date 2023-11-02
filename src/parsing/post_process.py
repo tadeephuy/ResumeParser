@@ -35,10 +35,7 @@ def write_description(i):
     prompt = prompt_to_write_description(
         resp=resp, title=title, company=company, description=description
     )
-    new_output = chat([
-        SystemMessage(content="You are a career consultant."),
-        HumanMessage(content=prompt)
-    ])
+    
     new_output = post_write_description(new_output.content)
     st.session_state[f"work_description_{i}"] = new_output
     autofilled_work_exp[i]["work_description"]  = st.session_state[f"work_description_{i}"]
