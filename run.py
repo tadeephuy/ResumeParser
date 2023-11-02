@@ -4,7 +4,7 @@ import json
 from copy import deepcopy
 import streamlit as st
 from langchain.chat_models import ChatOpenAI
-import logging
+from streamlit.logger import get_logger
 import time
 
 from src.parsing.process_cv import parsing_cv
@@ -13,7 +13,7 @@ from src.helpers.callbacks import uploader_callback, downloader_callback
 from src.parsing.post_process import (write_experience_information, reset_description, 
                                       reset_resp, infer_more_skills, submit_form)
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = get_logger(__name__)
 
 init_state({
     'parsed_pdf': {},
@@ -59,12 +59,7 @@ if (uploaded_file is not None) and (not(st.session_state['processed'])):
     t1 = time.perf_counter(), time.process_time()
     raw_response = parsing_cv(uploaded_file, CHAT_MODEL, status)
     t2 = time.perf_counter(), time.process_time()
-    LOGGER.info({
-            parsing_cv.__name__: [
-                f"Real time: {t2[0] - t1[0]:.2f} seconds",
-                f"CPU time: {t2[1] - t1[1]:.2f} seconds",
-            ]
-    })
+    LOGGER.info(f"Real time: {t2[0] - t1[0]:.2f} seconds, CPU time: {t2[1] - t1[1]:.2f} seconds")
     json_response = json.loads(raw_response)
     st.session_state['parsed_pdf'] = json_response
     st.session_state['processed'] = True
