@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import time
 from copy import deepcopy
-from PyPDF2 import PdfReader
 import streamlit as st
+from langchain.chat_models import ChatOpenAI
 
 from src.parsing.process_cv import parsing_cv
 from src.helpers.utils import init_state, display_pdf_pil
@@ -12,14 +12,34 @@ from src.helpers.callbacks import uploader_callback, downloader_callback
 from src.parsing.post_process import (write_description, reset_description, 
                                   rewrite_resp, reset_resp, infer_more_skills, submit_form)
 
-init_state('parsed_pdf', {})
-init_state('uploaded', False)
-init_state('processed', False)
-init_state('output_json', None)
+init_state({
+    'parsed_pdf': {},
+    'uploaded': False,
+    'processed': False,
+    'output_json': None
+})
+
+CHAT_MODEL = ChatOpenAI(
+    model="gpt-3.5-turbo-16k",
+    temperature=0.0,
+    openai_api_key=st.secrets["openai_api_key"],
+)
 
 ##################################### LAYOUT DEFINITION ################################################
 st.set_page_config(page_title="Resume Parser", page_icon="📑")
 st.title("📑 Resume Parser")
+
+# Inject custom CSS to set the width of the sidebar
+st.markdown(
+    """
+    <style>
+        section[data-testid="stSidebar"] {
+            width: 100% !important; # Set the width to your desired value
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 with st.sidebar:
     # resume upload
@@ -33,21 +53,9 @@ elif (uploaded_file is not None):
     status = st.status("Processing the resume ... ", expanded=True) 
 
 if (uploaded_file is not None) and (not(st.session_state['processed'])):
-    pdf = PdfReader(uploaded_file)
-    pdf = '\n'.join([pdf.pages[c].extract_text() for c in range(len(pdf.pages))])
-
-    status.write("👩‍💻 Analyzing the resume...")
-    t1 = time.perf_counter(), time.process_time()
-    parsed_cv = parsing_cv(pdf)
-    t2 = time.perf_counter(), time.process_time()
-    print({
-            parsing_cv.__name__: [
-                f"Real time: {t2[0] - t1[0]:.2f} seconds",
-                f"CPU time: {t2[1] - t1[1]:.2f} seconds",
-            ]
-    })
-    parsed_cv = json.loads(parsed_cv)
-    st.session_state['parsed_pdf'] = parsed_cv
+    raw_response = parsing_cv(uploaded_file, CHAT_MODEL, status)
+    json_response = json.loads(raw_response)
+    st.session_state['parsed_pdf'] = json_response
     st.session_state['processed'] = True
 
 if st.session_state['processed']:

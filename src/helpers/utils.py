@@ -1,10 +1,14 @@
 import base64
+from functools import lru_cache
 import streamlit as st
 import fitz
 import PIL
-def init_state(key, value):
-    if key not in st.session_state:
-        st.session_state[key] = value
+from langchain.chains import LLMChain
+
+def init_state(list_key_value):
+    for key, value in list_key_value.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
 
 def display_pdf_pil(uploaded_file):
     doc = fitz.open(stream=uploaded_file.read())
@@ -21,3 +25,7 @@ def display_pdf_embed(uploaded_file):
     pdf_display = F'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height=600px type="application/pdf"></iframe>'
     st.markdown(pdf_display, unsafe_allow_html=True)
     st.session_state['uploaded'] = True
+
+
+def init_chain(chat_models, prompt_template):
+    return LLMChain(llm=chat_models, prompt=prompt_template)
