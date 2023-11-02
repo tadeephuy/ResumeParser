@@ -8,7 +8,7 @@ import streamlit as st
 
 from src.parsing.process_cv import parsing_cv
 from src.helpers.utils import init_state, display_pdf_pil
-from callbacks import uploader_callback, downloader_callback
+from src.helpers.callbacks import uploader_callback, downloader_callback
 from src.parsing.post_process import (write_description, reset_description, 
                                   rewrite_resp, reset_resp, infer_more_skills, submit_form)
 
