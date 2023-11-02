@@ -1,224 +1,32 @@
-import streamlit as st
-import os
-import base64
+from __future__ import annotations
+
 import json
-from functools import partial
 from copy import deepcopy
-from PyPDF2 import PdfReader
-import fitz
-import shutil
-from prompt import (prompt_to_parse_cv, prompt_to_rewrite_task, prompt_to_add_skills, prompt_to_write_description,
-                    post_parse_cv, post_rewrite_task, post_add_skills, post_write_description)
-from langchain.schema import (
-    AIMessage, HumanMessage, SystemMessage
-)
+import streamlit as st
 from langchain.chat_models import ChatOpenAI
 
-# initialize chat model
-chat = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0.0, 
-                  openai_api_key=st.secrets['openai_api_key'])
+from src.parsing.process_cv import parsing_cv
+from src.helpers.utils import init_state, display_pdf_pil
+from src.helpers.callbacks import uploader_callback, downloader_callback
+from src.parsing.post_process import (write_experience_information, reset_description, 
+                                      reset_resp, infer_more_skills, submit_form)
 
-def write_description(i):
-    st.toast("Summarizing description ...", icon='✍️')
-    
-    resp = st.session_state.get(f"work_responsibilities_{i}", "")
-    title = st.session_state.get(f"work_title_{i}", "employee")
-    company = st.session_state.get(f"work_company_{i}", "Conpany")
-    description = st.session_state.get(f"work_description_{i}", "")
-    
-    prompt = prompt_to_write_description(
-        resp=resp, title=title, company=company, description=description
-    )
-    new_output = chat([
-        SystemMessage(content="You are a career consultant."),
-        HumanMessage(content=prompt)
-    ])
-    new_output = post_write_description(new_output.content)
-    st.session_state[f"work_description_{i}"] = new_output
-    autofilled_work_exp[i]["work_description"]  = st.session_state[f"work_description_{i}"]
+init_state({
+    'parsed_pdf': {},
+    'uploaded': False,
+    'processed': False,
+    'output_json': None
+})
 
-def rewrite_resp(i):
-    st.toast("Rewriting responsibilities ...", icon='✍️')
-    
-    resp = st.session_state.get(f"work_responsibilities_{i}", "")
-    title = st.session_state.get(f"work_title_{i}", "employee")
-    company = st.session_state.get(f"work_company_{i}", "Conpany")
-    description = st.session_state.get(f"work_description_{i}", "")
+CHAT_MODEL = ChatOpenAI(
+    model="gpt-3.5-turbo-16k",
+    temperature=0.0,
+    openai_api_key=st.secrets["openai_api_key"],
+)
 
-    prompt = prompt_to_rewrite_task(
-        resp=resp, title=title, company=company, description=description
-    )
-    new_output = chat([
-        SystemMessage(content="You are a career consultant."),
-        HumanMessage(content=prompt)
-    ])
-    new_output = post_rewrite_task(new_output.content)
-    st.session_state[f"work_responsibilities_{i}"] = new_output
-    autofilled_work_exp[i]["work_responsibilities"]  = st.session_state[f"work_responsibilities_{i}"]
-
-def infer_more_skills():
-    st.toast("Searching for more skills...", icon="🔎")
-    export_skills = []
-    for i in range(len(autofilled_skills)):
-        es = {
-            "skill_name": st.session_state[f"skill_name_{i}"],
-            "yoe": st.session_state[f"yoe_{i}"],
-        }
-        export_skills.append(es)
-    skills = '\n'.join(f"{c['skill_name']} - {c['yoe']}" for c in export_skills)
-    
-    prompt = prompt_to_add_skills(skills=skills, resume_json=str(st.session_state['parsed_pdf']))
-    new_skills = chat([
-        SystemMessage(content="You are a career consultant."),
-        HumanMessage(content=prompt)
-    ])
-    new_skills = post_add_skills(new_skills.content)
-    new_skills = eval(new_skills)
-    st.session_state['new_skills'] = new_skills
-
-
-def extract_text_from_pdf(uploaded_file):
-    with st.status("Processing the resume ... ", expanded=True) as status:
-        status.write("📑 Extracting text ...")
-        pdf = PdfReader(uploaded_file)
-        pdf = '\n'.join([pdf.pages[c].extract_text() for c in range(len(pdf.pages))])
-        
-        status.write("👩‍💻 Analyzing the resume ...")
-        parsed_cv = chat([
-            SystemMessage(content="You are a senior recruiter."),
-            HumanMessage(content=prompt_to_parse_cv(resume=pdf))
-        ])
-        parsed_cv = post_parse_cv(parsed_cv.content)
-        status.write("✍️ Filling the forms ...")
-        parsed_cv = json.loads(parsed_cv)
-        # with open('./sample.json', 'rb') as f:
-        #     parsed_cv = json.load(f)
-        st.session_state['parsed_pdf'] = parsed_cv
-        st.session_state['processed'] = True
-
-        status.update(label="Completed", state="complete", expanded=False)
-
-
-def display_pdf(uploaded_file):
-
-    os.makedirs('./tmp_output', exist_ok=True)
-    doc = fitz.open(stream=uploaded_file.read())
-    for i, page in enumerate(doc):
-        pix = page.get_pixmap(dpi=300)  # render page to an image
-        pix.save(f"./tmp_output/page_{i}.png")
-    st.image([f"./tmp_output/page_{i}.png" for i in range(len(doc))])
-
-    # wait until can display pdf on steamlit cloud
-    # base64_pdf = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
-    # pdf_display = F'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height=600px type="application/pdf"></iframe>'
-    # st.markdown(pdf_display, unsafe_allow_html=True)
-    st.session_state['uploaded'] = True
-
-def reset_description(i):
-    description = work_exp[i].get("work_description", "") 
-    st.session_state[f"work_description_{i}"] = description
-    st.toast('Description restored.', icon='🔄')
-
-def reset_resp(i):
-    resps_list = work_exp[i].get("work_responsibilities", []) 
-    resps_str = "\n".join([f"- {c}" for c in resps_list])
-    st.session_state[f"work_responsibilities_{i}"] = resps_str
-    st.toast('Responsibilities restored.', icon='🔄')
-
-def submit_form():
-    export_work_exp = []
-    for i in range(len(autofilled_work_exp)):
-        ewe = {
-            "work_timeline": [st.session_state[f"work_timeline_from_{i}"], st.session_state[f"work_timeline_to_{i}"]],
-            "work_company": st.session_state[f"work_company_{i}"],
-            "work_title": st.session_state[f"work_title_{i}"],
-            "work_description": st.session_state[f"work_description_{i}"],
-            "work_responsibilities": [c[2:] for c in st.session_state[f"work_responsibilities_{i}"].split('\n')]
-        }
-        export_work_exp.append(ewe)
-    
-    export_education = []
-    for i in range(len(autofilled_edus)):
-        ee = {
-            "edu_timeline": [st.session_state[f"edu_timeline_from_{i}"], st.session_state[f"edu_timeline_to_{i}"]],
-            "edu_school": st.session_state[f"edu_school_{i}"],
-            "edu_degree": st.session_state[f"edu_degree_{i}"],
-            "edu_gpa": st.session_state[f"edu_gpa_{i}"],
-            "edu_description": st.session_state[f"edu_description_{i}"],
-        }
-        export_education.append(ee)
-    
-    export_projects = []
-    for i in range(len(autofilled_projects)):
-        ep = {
-            "project_timeline": [st.session_state[f"project_timeline_from_{i}"], st.session_state[f"project_timeline_to_{i}"]],
-            "project_name": st.session_state[f"project_name_{i}"],
-            "project_description": st.session_state[f"project_description_{i}"],
-        }
-        export_projects.append(ep)
-    
-    export_skills = []
-    for i in range(len(autofilled_skills)):
-        es = {
-            "skill_name": st.session_state[f"skill_name_{i}"],
-            "yoe": st.session_state[f"yoe_{i}"],
-        }
-        export_skills.append(es)
-    
-    export_languages = []
-    for i in range(len(autofilled_languages)):
-        el = {
-            "lang": st.session_state[f"lang_{i}"],
-            "lang_lvl": st.session_state[f"lang_lvl_{i}"],
-        }
-        export_languages.append(el)    
-
-    export = {
-        "candidate_name": st.session_state.candidate_name,
-        "candidate_title": st.session_state.candidate_title,
-        "summary": st.session_state.summary,
-        "links": st.session_state.links.split('\n'),
-        "languages": export_languages,
-        "work_exp": export_work_exp,
-        "education": export_education,
-        "projects": export_projects,
-        "certifications": st.session_state.certifications.split('\n'),
-        "skills": export_skills
-    }
-    st.session_state['output_json'] = export
-    os.makedirs('output', exist_ok=True)
-    with open('./output/export_resume.json', 'w', encoding='utf-8') as f:
-        json.dump(export, f, ensure_ascii=False, indent=4)
-    st.toast("Form submitted!", icon="🎯")
-
-def downloader_callback():
-    if st.session_state['output_json'] is None:
-        st.toast(":red[Submit the form first!]", icon="⚠️")
-        return
-    st.toast("New resume downloaded!", icon="🎯")
-    with open('./output/export_resume_doc.json', 'w', encoding='utf-8') as f:
-        json.dump(st.session_state['output_json'], f, ensure_ascii=False, indent=4)
-
-def uploader_callback():
-    st.toast("Resume uploaded.", icon="📑")
-    shutil.rmtree("./tmp_output", True )
-
-    st.session_state['parsed_pdf'] = dict()
-    st.session_state['processed'] = False
-    st.session_state['output_json'] = None
-
-##################################### INITIALIZE STATES ################################################
-def init_state(key, value):
-    if key not in st.session_state:
-        st.session_state[key] = value
-
-init_state('parsed_pdf', dict())
-init_state('uploaded', False)
-init_state('processed', False)
-init_state('output_json', None)
 ##################################### LAYOUT DEFINITION ################################################
 st.set_page_config(page_title="Resume Parser", page_icon="📑")
-st.title("📑 Resume Parser",)
+st.title("📑 Resume Parser")
 
 # Inject custom CSS to set the width of the sidebar
 st.markdown(
@@ -232,12 +40,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# st.button("Restart", on_click="restart")
 with st.sidebar:
     # resume upload
     uploaded_file = st.file_uploader("Upload Resume", on_change=uploader_callback)
     if uploaded_file is not None:       
-        display_pdf(uploaded_file=uploaded_file)
+        display_pdf_pil(uploaded_file=uploaded_file)
 
 if st.session_state['processed']:
     status = st.status("Editing the resume ... ", expanded=True)
@@ -245,19 +52,9 @@ elif (uploaded_file is not None):
     status = st.status("Processing the resume ... ", expanded=True) 
 
 if (uploaded_file is not None) and (not(st.session_state['processed'])):
-    # extract_text_from_pdf(uploaded_file=uploaded_file)
-    status.write("📝 Extracting text...")
-    pdf = PdfReader(uploaded_file)
-    pdf = '\n'.join([pdf.pages[c].extract_text() for c in range(len(pdf.pages))])
-    
-    status.write("👩‍💻 Analyzing the resume...")
-    parsed_cv = chat([
-        SystemMessage(content="You are a senior recruiter."),
-        HumanMessage(content=prompt_to_parse_cv(resume=pdf))
-    ])
-    parsed_cv = post_parse_cv(parsed_cv.content)
-    parsed_cv = json.loads(parsed_cv)
-    st.session_state['parsed_pdf'] = parsed_cv
+    raw_response = parsing_cv(uploaded_file, CHAT_MODEL, status)
+    json_response = json.loads(raw_response)
+    st.session_state['parsed_pdf'] = json_response
     st.session_state['processed'] = True
 
 if st.session_state['processed']:
@@ -269,7 +66,7 @@ if st.session_state['processed']:
         candidate_title = st.text_input('Title', value=st.session_state['parsed_pdf'].get('candidate_title', ""), key="candidate_title")
         summary = st.text_area("Summary", value=st.session_state['parsed_pdf'].get('summary', ""), key="summary")
         links = st.text_area("Links", "\n".join(st.session_state['parsed_pdf'].get('links', [])), key="links")
-        
+
         languages = st.session_state['parsed_pdf'].get('languages', [])
         autofilled_languages = deepcopy(languages)
         c1, c2 = st.columns([3,2])
@@ -288,9 +85,11 @@ if st.session_state['processed']:
         autofilled_work_exp = deepcopy(work_exp)
         for i, we in enumerate(work_exp):
             # company
-            autofilled_work_exp[i]["work_company"] = st.text_input(f"Company", 
-                                                            work_exp[i].get("work_company", ""), 
-                                                            key=f"work_company_{i}")
+            autofilled_work_exp[i]["work_company"] = st.text_input(
+                "Company",
+                work_exp[i].get("work_company", ""),
+                key=f"work_company_{i}",
+            )
 
             # timeline
             c1, c2 = st.columns(2)
@@ -303,33 +102,41 @@ if st.session_state['processed']:
             autofilled_work_exp[i]["work_timeline"] = [w_f, w_t]
 
             # title
-            autofilled_work_exp[i]["work_title"] = st.text_input(f"Title", 
+            autofilled_work_exp[i]["work_title"] = st.text_input("Title", 
                                                             work_exp[i].get("work_title", ""), 
                                                             key=f"work_title_{i}")
 
             # description
-            autofilled_work_exp[i]["work_description"] = st.text_area(f"Description",
-                                                                work_exp[i].get("work_description", ""),
-                                                                height=150,
-                                                                key=f"work_description_{i}",)
+            autofilled_work_exp[i]["work_description"] = st.text_area(
+                "Description",
+                work_exp[i].get("work_description", ""),
+                height=150,
+                key=f"work_description_{i}",
+            )
             bc1, bc2 = st.columns(2, gap="large")
-            bc1.button("✍️ Rewrite", on_click=write_description, args=(i,), key=f"rewrite_button_desc_{i}")
+            bc1.button("✍️ Rewrite", 
+                       on_click = write_experience_information, 
+                       args=(i, "write_desc", CHAT_MODEL, autofilled_work_exp), 
+                       key=f"rewrite_button_desc_{i}")
             bc2.button("🔄 Reset", on_click=reset_description, args=(i,), key=f"reset_button_desc_{i}")  
 
             # responsibilities
             resps_list = work_exp[i].get("work_responsibilities", [])
             height = min(50*len(resps_list) if len(resps_list) > 0 else 10, 300)
-            
+
             resps_str = "\n".join([f"- {c}" for c in resps_list])
-            autofilled_work_exp[i]["work_responsibilities"] = st.text_area(f"Responsibilities",
+            autofilled_work_exp[i]["work_responsibilities"] = st.text_area("Responsibilities",
                                                                     resps_str,
                                                                     height=height,
                                                                     key=f"work_responsibilities_{i}")
 
             bc1, bc2 = st.columns(2, gap="large")
-            bc1.button("✍️ Rewrite", on_click=rewrite_resp, args=(i,), key=f"rewrite_button_resp_{i}")
+            bc1.button("✍️ Rewrite",
+                       on_click = write_experience_information, 
+                       args=(i, "rewrite_resp", CHAT_MODEL, autofilled_work_exp), 
+                       key=f"rewrite_button_resp_{i}")
             bc2.button("🔄 Reset", on_click=reset_resp, args=(i,), key=f"reset_button_resp_{i}")            
-            
+
             st.markdown("""---""")
 
     with st.expander(label="EDUCATION", expanded=True,):
@@ -338,7 +145,7 @@ if st.session_state['processed']:
         if len(edus) > 0:
             for i, edu in enumerate(edus):
                 # Degree
-                autofilled_edus[i]["edu_degree"] = st.text_input(f"Degree",
+                autofilled_edus[i]["edu_degree"] = st.text_input("Degree",
                                                             edus[i].get("edu_degree", ""),
                                                             key=f"edu_degree_{i}")
 
@@ -351,22 +158,26 @@ if st.session_state['processed']:
                                     edus[i].get("edu_timeline", [None,None])[-1], 
                                     key=f"edu_timeline_to_{i}")
                 autofilled_edus[i]["edu_timeline"] = [w_f, w_t]
-                
+
                 # school
-                autofilled_edus[i]["edu_school"] = st.text_input(f"School", 
-                                                            edus[i].get("edu_school", ""), 
-                                                            key=f"edu_school_{i}")
+                autofilled_edus[i]["edu_school"] = st.text_input(
+                    "School",
+                    edus[i].get("edu_school", ""),
+                    key=f"edu_school_{i}",
+                )
 
                 # GPA
-                autofilled_edus[i]["edu_gpa"] = st.text_input(f"GPA", 
+                autofilled_edus[i]["edu_gpa"] = st.text_input("GPA", 
                                                         edus[i].get("edu_gpa", ""), 
                                                         key=f"edu_gpa_{i}")
-                
+
                 # description
-                autofilled_edus[i]["edu_description"] = st.text_area(f"Description",
-                                                                edus[i].get("edu_description", ""),
-                                                                height=50,
-                                                                key=f"edu_description_{i}",)
+                autofilled_edus[i]["edu_description"] = st.text_area(
+                    "Description",
+                    edus[i].get("edu_description", ""),
+                    height=50,
+                    key=f"edu_description_{i}",
+                )
                 st.markdown("""---""")
 
     with st.expander(label="PROJECTS", expanded=True,):
@@ -388,12 +199,14 @@ if st.session_state['processed']:
                                     projects[i].get("project_timeline", [None,None])[-1], 
                                     key=f"project_timeline_to_{i}")
                 autofilled_projects[i]["project_timeline"] = [w_f, w_t]
-                
+
                 # description
-                autofilled_projects[i]["project_description"] = st.text_area(f"Description",
-                                                                projects[i].get("project_description", ""),
-                                                                height=50,
-                                                                key=f"project_description_{i}",)
+                autofilled_projects[i]["project_description"] = st.text_area(
+                    "Description",
+                    projects[i].get("project_description", ""),
+                    height=50,
+                    key=f"project_description_{i}",
+                )
 
 
     with st.expander(label="SKILLS", expanded=True,):
@@ -437,8 +250,3 @@ if st.session_state['processed']:
         c2.download_button("🖨️ Export file", data=download_data, file_name='export_doc.json',
                            on_click=downloader_callback, key="export")
     status.update(label="Completed", state="complete", expanded=False)
-
-
-
-
-
