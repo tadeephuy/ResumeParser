@@ -38,7 +38,6 @@ responsibilities:
 {resp}
 
 Answer format:
-Description:
 <rewritten responsibilities: within 50 words>
 """
 
@@ -58,7 +57,6 @@ responsibilities:
 {resp}
 
 Answer format:
-Responsibilities:
 <rewritten responsibilities>
 """
 

@@ -1,4 +1,3 @@
-from functools import lru_cache
 from PyPDF2 import PdfReader
 from langchain.prompts.prompt import PromptTemplate
 
@@ -11,16 +10,14 @@ PROMPT = PromptTemplate(
     template=PARSING_CV_PROMPTING
 )
 
-
-def ocr_pdf(file, status_obj):
+def extract_text_pdf(file, status_obj):
     status_obj.write("📝 Extracting text...")
     pdf_loader = PdfReader(file)
     return '\n'.join([pdf_loader.pages[c].extract_text() for c in range(len(pdf_loader.pages))])
 
-
 def parsing_cv(file_content, model, status_obj):
     chain = init_chain(model, PROMPT)
-    document = ocr_pdf(file_content, status_obj)
+    document = extract_text_pdf(file_content, status_obj)
     status_obj.write("👩‍💻 Analyzing the resume...")
     return chain.run({
         "resume": document,

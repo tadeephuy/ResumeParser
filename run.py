@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import time
 from copy import deepcopy
 import streamlit as st
 from langchain.chat_models import ChatOpenAI
@@ -9,8 +8,8 @@ from langchain.chat_models import ChatOpenAI
 from src.parsing.process_cv import parsing_cv
 from src.helpers.utils import init_state, display_pdf_pil
 from src.helpers.callbacks import uploader_callback, downloader_callback
-from src.parsing.post_process import (write_description, reset_description, 
-                                  rewrite_resp, reset_resp, infer_more_skills, submit_form)
+from src.parsing.post_process import (write_experience_information, reset_description, 
+                                      reset_resp, infer_more_skills, submit_form)
 
 init_state({
     'parsed_pdf': {},
@@ -115,7 +114,10 @@ if st.session_state['processed']:
                 key=f"work_description_{i}",
             )
             bc1, bc2 = st.columns(2, gap="large")
-            bc1.button("✍️ Rewrite", on_click=write_description, args=(i,), key=f"rewrite_button_desc_{i}")
+            bc1.button("✍️ Rewrite", 
+                       on_click = write_experience_information, 
+                       args=(i, "write_desc", CHAT_MODEL, autofilled_work_exp), 
+                       key=f"rewrite_button_desc_{i}")
             bc2.button("🔄 Reset", on_click=reset_description, args=(i,), key=f"reset_button_desc_{i}")  
 
             # responsibilities
@@ -129,7 +131,10 @@ if st.session_state['processed']:
                                                                     key=f"work_responsibilities_{i}")
 
             bc1, bc2 = st.columns(2, gap="large")
-            bc1.button("✍️ Rewrite", on_click=rewrite_resp, args=(i,), key=f"rewrite_button_resp_{i}")
+            bc1.button("✍️ Rewrite",
+                       on_click = write_experience_information, 
+                       args=(i, "rewrite_resp", CHAT_MODEL, autofilled_work_exp), 
+                       key=f"rewrite_button_resp_{i}")
             bc2.button("🔄 Reset", on_click=reset_resp, args=(i,), key=f"reset_button_resp_{i}")            
 
             st.markdown("""---""")

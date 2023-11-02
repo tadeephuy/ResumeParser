@@ -1,5 +1,4 @@
 import base64
-from functools import lru_cache
 import streamlit as st
 import fitz
 import PIL

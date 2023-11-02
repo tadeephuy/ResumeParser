@@ -2,6 +2,8 @@ import json
 import os
 import streamlit as st
 from langchain.prompts.prompt import PromptTemplate
+
+from ..helpers.utils import init_chain
 from ..model.prompt_template import (WRITING_DESCRIPTION_PROMPTING,
                                      REWRITING_TASK_PROMPTING,
                                      ADDING_SKILLS_PROMPTING)
@@ -19,51 +21,51 @@ ADD_ON_SKILL_PROMPT = PromptTemplate(
     template=ADDING_SKILLS_PROMPTING
 )
 
-def write_description(i):
-    st.toast("Summarizing description ...", icon='✍️')
+def get_experience_information(index):
+    resp = st.session_state.get(f"work_responsibilities_{index}", "")
+    title = st.session_state.get(f"work_title_{index}", "employee")
+    company = st.session_state.get(f"work_company_{index}", "Company")
+    description = st.session_state.get(f"work_description_{index}", "")
     
-    resp = st.session_state.get(f"work_responsibilities_{i}", "")
-    title = st.session_state.get(f"work_title_{i}", "employee")
-    company = st.session_state.get(f"work_company_{i}", "Conpany")
-    description = st.session_state.get(f"work_description_{i}", "")
-    
-    prompt = prompt_to_write_description(
-        resp=resp, title=title, company=company, description=description
-    )
-    
-    new_output = post_write_description(new_output.content)
-    st.session_state[f"work_description_{i}"] = new_output
-    autofilled_work_exp[i]["work_description"]  = st.session_state[f"work_description_{i}"]
+    return resp, title, company, description
 
-def reset_description(i):
+def reset_description(work_exp, i):
     description = work_exp[i].get("work_description", "") 
     st.session_state[f"work_description_{i}"] = description
     st.toast('Description restored.', icon='🔄')
-    
-def rewrite_resp(i):
-    st.toast("Rewriting responsibilities ...", icon='✍️')
-    
-    resp = st.session_state.get(f"work_responsibilities_{i}", "")
-    title = st.session_state.get(f"work_title_{i}", "employee")
-    company = st.session_state.get(f"work_company_{i}", "Conpany")
-    description = st.session_state.get(f"work_description_{i}", "")
 
-    prompt = prompt_to_rewrite_task(
-        resp=resp, title=title, company=company, description=description
-    )
-    new_output = chat([
-        SystemMessage(content="You are a career consultant."),
-        HumanMessage(content=prompt)
-    ])
-    new_output = post_rewrite_task(new_output.content)
-    st.session_state[f"work_responsibilities_{i}"] = new_output
-    autofilled_work_exp[i]["work_responsibilities"]  = st.session_state[f"work_responsibilities_{i}"]
-
-def reset_resp(i):
+def reset_resp(work_exp, i):
     resps_list = work_exp[i].get("work_responsibilities", []) 
     resps_str = "\n".join([f"- {c}" for c in resps_list])
     st.session_state[f"work_responsibilities_{i}"] = resps_str
     st.toast('Responsibilities restored.', icon='🔄')
+
+def init_chain_experience(task, chat_model):
+    return (
+        init_chain(chat_model, REWRITE_TASK_PROMPT)
+        if task == "rewrite_resp"
+        else init_chain(chat_model, WRITE_DESCRIPTION_PROMPT)
+    )
+
+def update_object(autofilled_obj, index, task, model_response):
+    if task == "rewrite_resp":
+        st.session_state[f"work_responsibilities_{index}"] = model_response
+        autofilled_obj[index]["work_responsibilities"]  = st.session_state[f"work_responsibilities_{index}"]
+    else:
+        st.session_state[f"work_description_{index}"] = model_response
+        autofilled_obj[index]["work_description"]  = st.session_state[f"work_description_{index}"]
+
+def write_experience_information(index, task, chat_model, autofilled_obj):
+    resp, title, company, description = get_experience_information(index)
+    chain = init_chain_experience(task, chat_model)
+    model_response = chain.run({
+        "title": title,
+        "company": company,
+        "description": description,
+        "resp": resp
+    })
+    
+    update_object(autofilled_obj, index, task, model_response)
 
 def submit_form():
     export_work_exp = []
