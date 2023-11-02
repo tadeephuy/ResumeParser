@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 
 import json
 from copy import deepcopy
@@ -7,7 +8,7 @@ from langchain.chat_models import ChatOpenAI
 from streamlit.logger import get_logger
 import time
 
-from src.parsing.process_cv import parsing_cv
+from src.parsing.process_cv import parsing_cv_async
 from src.helpers.utils import init_state, display_pdf_pil
 from src.helpers.callbacks import uploader_callback, downloader_callback
 from src.parsing.post_process import (write_experience_information, reset_description, 
@@ -57,9 +58,9 @@ elif (uploaded_file is not None):
 
 if (uploaded_file is not None) and (not(st.session_state['processed'])):
     t1 = time.perf_counter(), time.process_time()
-    raw_response = parsing_cv(uploaded_file, CHAT_MODEL, status)
+    raw_response = asyncio.run(parsing_cv_async(uploaded_file, CHAT_MODEL, status))
     t2 = time.perf_counter(), time.process_time()
-    LOGGER.info(f"Real time: {t2[0] - t1[0]:.2f} seconds, CPU time: {t2[1] - t1[1]:.2f} seconds")
+    LOGGER.info(f"Total: Real time: {t2[0] - t1[0]:.2f} seconds, CPU time: {t2[1] - t1[1]:.2f} seconds")
     json_response = json.loads(raw_response)
     st.session_state['parsed_pdf'] = json_response
     st.session_state['processed'] = True
