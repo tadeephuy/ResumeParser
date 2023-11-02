@@ -1,17 +1,16 @@
+import base64
+import io
+import PIL
 import streamlit as st
 import os
-import base64
 import json
-from functools import partial
 from copy import deepcopy
 from PyPDF2 import PdfReader
 import fitz
 import shutil
-from prompt import (prompt_to_parse_cv, prompt_to_rewrite_task, prompt_to_add_skills, prompt_to_write_description,
+from legacy.prompt import (prompt_to_parse_cv, prompt_to_rewrite_task, prompt_to_add_skills, prompt_to_write_description,
                     post_parse_cv, post_rewrite_task, post_add_skills, post_write_description)
-from langchain.schema import (
-    AIMessage, HumanMessage, SystemMessage
-)
+from langchain.schema import HumanMessage, SystemMessage
 from langchain.chat_models import ChatOpenAI
 
 # initialize chat model
@@ -101,18 +100,20 @@ def extract_text_from_pdf(uploaded_file):
 
 def display_pdf(uploaded_file):
 
-    os.makedirs('./tmp_output', exist_ok=True)
+    #os.makedirs('./tmp_output', exist_ok=True)
     doc = fitz.open(stream=uploaded_file.read())
-    for i, page in enumerate(doc):
-        pix = page.get_pixmap(dpi=300)  # render page to an image
-        pix.save(f"./tmp_output/page_{i}.png")
-    st.image([f"./tmp_output/page_{i}.png" for i in range(len(doc))])
+    pix_list = []
+    for page in doc:
+        pix = page.get_pixmap(dpi=300) # render page to an image
+        pix_list.append(PIL.Image.frombytes("RGB", [pix.width, pix.height], pix.samples))
+    #    pix.save(f"./tmp_output/page_{i}.png")
+    st.image(pix_list)
 
     # wait until can display pdf on steamlit cloud
-    # base64_pdf = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
-    # pdf_display = F'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height=600px type="application/pdf"></iframe>'
-    # st.markdown(pdf_display, unsafe_allow_html=True)
-    st.session_state['uploaded'] = True
+    #base64_pdf = base64.b64encode(uploaded_file.getvalue()).decode('utf-8')
+    #pdf_display = F'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height=600px type="application/pdf"></iframe>'
+    #st.markdown(pdf_display, unsafe_allow_html=True)
+    #st.session_state['uploaded'] = True
 
 def reset_description(i):
     description = work_exp[i].get("work_description", "") 
