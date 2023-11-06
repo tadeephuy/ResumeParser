@@ -5,6 +5,7 @@ from functools import lru_cache
 from concurrent.futures import ThreadPoolExecutor
 
 import io
+from PyPDF2 import PdfReader
 
 import pdfplumber as plumber
 
@@ -12,6 +13,14 @@ import pdfplumber as plumber
 LINE_HEIGHT_DIFF = (5, 30)
 LEFT_X_DIFF = 5
 LEFT_Y_DIFF = 20
+
+def extract_text_pdf(file, status_obj):
+    
+    pdf_loader = PdfReader(file)
+    return [
+        pdf_loader.pages[c].extract_text()
+        for c in range(len(pdf_loader.pages))
+    ]
 
 
 def sort_horizontal(
