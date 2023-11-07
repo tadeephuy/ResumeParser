@@ -314,7 +314,6 @@ if st.session_state['processed']:
                                                                 key=f"work_description_{i}",)
             bc1, bc2 = st.columns(2, gap="large")
             bc1.button("✍️ Rewrite", on_click=write_description, args=(i,), key=f"rewrite_button_desc_{i}")
-            bc1.button("✍️ Rewrite", on_click=write_description, args=(i,), key=f"rewrite_button_desc_{i}")
             bc2.button("🔄 Reset", on_click=reset_description, args=(i,), key=f"reset_button_desc_{i}")  
 
             # responsibilities
@@ -328,7 +327,6 @@ if st.session_state['processed']:
                                                                     key=f"work_responsibilities_{i}")
 
             bc1, bc2 = st.columns(2, gap="large")
-            bc1.button("✍️ Rewrite", on_click=rewrite_resp, args=(i,), key=f"rewrite_button_resp_{i}")
             bc1.button("✍️ Rewrite", on_click=rewrite_resp, args=(i,), key=f"rewrite_button_resp_{i}")
             bc2.button("🔄 Reset", on_click=reset_resp, args=(i,), key=f"reset_button_resp_{i}")            
             
@@ -439,8 +437,3 @@ if st.session_state['processed']:
         c2.download_button("🖨️ Export file", data=download_data, file_name='export_doc.json',
                            on_click=downloader_callback, key="export")
     status.update(label="Completed", state="complete", expanded=False)
-
-
-
-
-
