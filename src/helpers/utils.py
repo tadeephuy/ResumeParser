@@ -25,6 +25,6 @@ def display_pdf_embed(uploaded_file):
     st.markdown(pdf_display, unsafe_allow_html=True)
     st.session_state['uploaded'] = True
 
-
+st.cache(persist=True, show_spinner=False)
 def init_chain(chat_models, prompt_template):
     return LLMChain(llm=chat_models, prompt=prompt_template)

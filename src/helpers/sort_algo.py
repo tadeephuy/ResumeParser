@@ -2,8 +2,10 @@ from __future__ import annotations
 from collections import deque
 from typing import List, Dict
 from functools import lru_cache
+from concurrent.futures import ThreadPoolExecutor
 
 import io
+from PyPDF2 import PdfReader
 
 import pdfplumber as plumber
 
@@ -11,6 +13,14 @@ import pdfplumber as plumber
 LINE_HEIGHT_DIFF = (5, 30)
 LEFT_X_DIFF = 5
 LEFT_Y_DIFF = 20
+
+def extract_text_pdf(file, status_obj):
+    
+    pdf_loader = PdfReader(file)
+    return [
+        pdf_loader.pages[c].extract_text()
+        for c in range(len(pdf_loader.pages))
+    ]
 
 
 def sort_horizontal(
@@ -100,27 +110,42 @@ def sort_vertical(input_dicts: Dict[str, str | float | int]) -> List[str]:
     return result
 
 @lru_cache
-def read_pdf(file_content: bytes) -> List[Dict[str, str | float | int | bool]]:
+def read_pdf_page(page: plumber.Page) -> List[Dict[str, str | float | int | bool]]:
     """
-    Reads a PDF file and extracts text from it using OCR.
+    Reads a PDF page and extracts text from it using OCR.
+
+    Args:
+        page (plumber.Page): The PDF page.
+
+    Returns:
+        List[Dict[str, str | float | int | bool]]: A list of dictionaries, where each dictionary represents a word in the PDF page and contains the extracted text and coordinates.
+    """
+
+    return page.dedupe_chars().extract_words(x_tolerance=2, y_tolerance=2)
+
+def read_pdf(file_content: bytes) -> List[List[Dict[str, str | float | int | bool]]]:
+    """
+    Reads a PDF file and extracts text from each page using OCR.
 
     Args:
         file_content (bytes): The content of the PDF file.
 
     Returns:
-        List[Dict[str, str | float | int | bool]]: A list of dictionaries, where each dictionary represents a page in the PDF file and contains the extracted text.
+        List[List[Dict[str, str | float | int | bool]]]: A list of lists, where each inner list represents a page in the PDF file and contains the extracted text.
     """
 
     ocr_result = []
 
     with plumber.open(io.BytesIO(file_content)) as pdf:
-        for page in pdf.pages:
-            output = page.dedupe_chars().extract_words(x_tolerance=2, y_tolerance=2)
-            ocr_result.append(output)
+        with ThreadPoolExecutor() as executor:
+            pages = list(pdf.pages)
+            futures = [executor.submit(read_pdf_page, page) for page in pages]
+            ocr_result = [future.result() for future in futures]
 
     return ocr_result
 
-def ocr_cv(file_content: bytes) -> List[str]:
+
+def extract_text_cv(file_content: bytes) -> str:
     """
     Parses a CV file and extracts text from it using OCR.
 
@@ -128,16 +153,21 @@ def ocr_cv(file_content: bytes) -> List[str]:
         file_content (bytes): The content of the CV file.
 
     Returns:
-        List[str]: A list of strings containing the extracted text.
+        str: A string containing the extracted text.
     """
 
     ocr_result = read_pdf(file_content)
-    
-    result = []
-    for page in ocr_result:
-        sorted_horizontal = sort_horizontal(page)
-        sorted_vertical = sort_vertical(sorted_horizontal)
-        result.extend(sorted_vertical)
 
+    result = []
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(sort_horizontal, page) for page in ocr_result]
+        sorted_horizontal = [future.result() for future in futures]
+
+    with ThreadPoolExecutor() as executor:
+        futures = [executor.submit(sort_vertical, page) for page in sorted_horizontal]
+        sorted_vertical = [future.result() for future in futures]
+
+    for page in sorted_vertical:
+        result.extend(page)
 
     return "\n".join(result)
