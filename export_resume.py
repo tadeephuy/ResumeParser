@@ -116,12 +116,12 @@ def create_docx_file(data):
             run.font.bold = True
 
         for project in data['projects']:
-            details = cell_11.add_paragraph(f" {exp['project_name']}")
+            details = cell_11.add_paragraph(f" {project['project_name']}")
             details_runs = details.runs
             for run in details_runs:
                 run.font.bold = True
 
-            cell_11.add_paragraph(exp['project_description'])
+            cell_11.add_paragraph(project['project_description'])
 
 
     # Add education
