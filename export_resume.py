@@ -1,6 +1,6 @@
 import json
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, Mm
 from docx.enum.text import WD_COLOR_INDEX
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
 
@@ -9,6 +9,16 @@ def create_docx_file(data):
 
     # Create a new Word document
     doc = Document()
+    section = doc.sections[0]
+    section.page_height = Mm(297)
+    section.page_width = Mm(210)
+    section.left_margin = Mm(15)
+    section.right_margin = Mm(15)
+    section.top_margin = Mm(15.4)
+    section.bottom_margin = Mm(15)
+    # section.header_distance = Mm(12.7)
+    # section.footer_distance = Mm(12.7)
+    
 
     # Create a table with two columns
     table0 = doc.add_table(rows=1, cols=2)
@@ -42,9 +52,9 @@ def create_docx_file(data):
     cell_01.add_paragraph(data['summary'])
 
     # Add a horizontal line
-    doc.add_paragraph('_' * 100).alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    doc.add_paragraph('_' * 110).alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     doc.add_paragraph('www.smartdev.com | Hanoi City, Vietnam').alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    doc.add_paragraph('_' * 100).alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    doc.add_paragraph('_' * 110).alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
     # Iterate through all paragraphs and remove space after each one
     for paragraph in doc.paragraphs:
@@ -56,6 +66,9 @@ def create_docx_file(data):
     # Define the table cells
     cell_10 = table1.cell(0, 0)
     cell_11 = table1.cell(0, 1)
+    
+    cell_10.width = Mm(70)
+    cell_11.width = Mm(110)
 
     # Add links
     if len(data['links']) > 1:
@@ -81,6 +94,7 @@ def create_docx_file(data):
         details_runs = details.runs
         for run in details_runs:
             run.font.bold = True
+            run.font.size = Pt(14)
 
         cell_11.add_paragraph(exp['work_description'])
 
@@ -122,6 +136,16 @@ def create_docx_file(data):
         edu_details_runs = edu_details.runs
         for run in edu_details_runs:
             run.font.bold = True
+    
+    # Add Languages
+    lang = cell_10.add_paragraph('Languages')
+    lang_runs = lang.runs
+    for run in lang_runs:
+        run.font.size = Pt(20)
+        run.font.bold = True
+
+    for lang in data['languages']:
+        cell_10.add_paragraph(f"{lang['lang']}: {lang['lang_lvl']}", style='List Bullet')
 
     # Add certifcations
     if len(data['certifications']) > 0:
@@ -152,3 +176,9 @@ def create_docx_file(data):
             cell_10.add_paragraph(skill_text, style='List Bullet')
 
     return doc
+
+if __name__ == '__main__':
+    with open('.\export_doc.json', 'r') as f:
+        data = json.load(f)
+    doc = create_docx_file(data)
+    doc.save('export_resume.docx')
