@@ -188,7 +188,7 @@ def create_docx_file(data):
     borders = OxmlElement('w:tblBorders')
     bottom_border = OxmlElement('w:insideV')
     bottom_border.set(qn('w:val'), 'single')
-    bottom_border.set(qn('w:sz'), '4')
+    bottom_border.set(qn('w:sz'), '20')
     borders.append(bottom_border)
     table1._tbl.tblPr.append(borders)
     return doc
