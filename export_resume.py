@@ -3,22 +3,21 @@ from docx import Document
 from docx.shared import Pt, Mm
 from docx.enum.text import WD_COLOR_INDEX
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.oxml.shared import OxmlElement,qn
 
 
 def create_docx_file(data):
 
     # Create a new Word document
-    doc = Document()
+    doc = Document("./template.docx")
     section = doc.sections[0]
     section.page_height = Mm(297)
     section.page_width = Mm(210)
     section.left_margin = Mm(15)
     section.right_margin = Mm(15)
     section.top_margin = Mm(15.4)
-    section.bottom_margin = Mm(15)
-    # section.header_distance = Mm(12.7)
-    # section.footer_distance = Mm(12.7)
-    
+    section.bottom_margin = Mm(0)
+    section.footer_distance = Mm(0)
 
     # Create a table with two columns
     table0 = doc.add_table(rows=1, cols=2)
@@ -52,9 +51,9 @@ def create_docx_file(data):
     cell_01.add_paragraph(data['summary'])
 
     # Add a horizontal line
-    doc.add_paragraph('_' * 110).alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    doc.add_paragraph('_' * 90).alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
     doc.add_paragraph('www.smartdev.com | Hanoi City, Vietnam').alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    doc.add_paragraph('_' * 110).alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
+    doc.add_paragraph('_' * 90).alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
 
     # Iterate through all paragraphs and remove space after each one
     for paragraph in doc.paragraphs:
@@ -80,7 +79,7 @@ def create_docx_file(data):
 
         # Create the hyperlink
         for link in data['links']:
-            cell_10.add_paragraph(link, style='List Bullet')
+            cell_10.add_paragraph(link, style='Huy List')
 
     # Add work experience
     exp = cell_11.add_paragraph('Work Experience')
@@ -105,7 +104,16 @@ def create_docx_file(data):
             run.font.bold = True
 
         for resp in exp['work_responsibilities']:
-            cell_11.add_paragraph(resp, style='List Bullet')
+            cell_11.add_paragraph(resp, style='Huy List')
+        
+        # Add technologies
+        if len(exp['work_technologies']) > 0:
+            techs = cell_11.add_paragraph('Technologies: ')
+            techs_runs = techs.runs
+            for run in techs_runs:
+                run.font.bold = True
+
+            cell_11.add_paragraph(exp['work_technologies'])
 
     # Add projects
     if len(data['projects']) > 0:
@@ -145,7 +153,7 @@ def create_docx_file(data):
         run.font.bold = True
 
     for lang in data['languages']:
-        cell_10.add_paragraph(f"{lang['lang']}: {lang['lang_lvl']}", style='List Bullet')
+        cell_10.add_paragraph(f"{lang['lang']}: {lang['lang_lvl']}", style='Huy List')
 
     # Add certifcations
     if len(data['certifications']) > 0:
@@ -156,7 +164,7 @@ def create_docx_file(data):
             run.font.bold = True
 
         for cert in data['certifications']:
-            cell_10.add_paragraph(cert, style='List Bullet')
+            cell_10.add_paragraph(cert, style='Huy List')
 
     # Add skills
     if len(data['skills']) > 0:
@@ -173,8 +181,16 @@ def create_docx_file(data):
                 skill_text = f"{skill_name} - {yoe} years"
             else:
                 skill_text = skill_name
-            cell_10.add_paragraph(skill_text, style='List Bullet')
+            cell_10.add_paragraph(skill_text, style='Huy List')
 
+
+    # Add inner vertical border
+    borders = OxmlElement('w:tblBorders')
+    bottom_border = OxmlElement('w:insideV')
+    bottom_border.set(qn('w:val'), 'single')
+    bottom_border.set(qn('w:sz'), '4')
+    borders.append(bottom_border)
+    table1._tbl.tblPr.append(borders)
     return doc
 
 if __name__ == '__main__':
