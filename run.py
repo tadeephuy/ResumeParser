@@ -167,6 +167,12 @@ def submit_form():
             "yoe": st.session_state[f"yoe_{i}"],
         }
         export_skills.append(es)
+    for i in range(len(autofilled_skills)):
+        es = {
+            "skill_name": st.session_state[f"skill_name_{i}"],
+            "yoe": st.session_state[f"yoe_{i}"],
+        }
+        export_skills.append(es)
     
     export_languages = []
     for i in range(len(autofilled_languages)):
@@ -297,11 +303,11 @@ if st.session_state['processed']:
 
             # timeline
             c1, c2 = st.columns(2)
-            w_f = c1.text_input("From",
-                                work_exp[i].get("work_timeline", [None,None])[0], 
+            timeline = work_exp[i].get("work_timeline", [None,None])
+            if timeline is None: timeline = [None, None]
+            w_f = c1.text_input("From", timeline[0], 
                                 key=f"work_timeline_from_{i}")
-            w_t = c2.text_input("To", 
-                                work_exp[i].get("work_timeline", [None,None])[-1], 
+            w_t = c2.text_input("To", timeline[-1], 
                                 key=f"work_timeline_to_{i}")
             autofilled_work_exp[i]["work_timeline"] = [w_f, w_t]
 
@@ -390,11 +396,11 @@ if st.session_state['processed']:
 
                 # timeline
                 c1, c2 = st.columns(2)
-                w_f = c1.text_input("From",
-                                    projects[i].get("project_timeline", [None,None])[0], 
+                timeline = projects[i].get("project_timeline", [None,None])
+                if timeline is None: timeline = [None,None]
+                w_f = c1.text_input("From", timeline[0], 
                                     key=f"project_timeline_from_{i}")
-                w_t = c2.text_input("To", 
-                                    projects[i].get("project_timeline", [None,None])[-1], 
+                w_t = c2.text_input("To", timeline[-1], 
                                     key=f"project_timeline_to_{i}")
                 autofilled_projects[i]["project_timeline"] = [w_f, w_t]
                 
@@ -407,7 +413,10 @@ if st.session_state['processed']:
 
     with st.expander(label="SKILLS", expanded=True,):
         certifications = st.session_state['parsed_pdf'].get('certifications', [])
-        certifications = st.text_area("Certifications", "\n".join(certifications), key="certifications")
+        height = min(50*len(certifications) if len(certifications) > 0 else 10, 300)
+        certifications = st.text_area("Certifications", "\n".join(certifications),
+                                      height=height,
+                                      key="certifications")
 
         skills = st.session_state['parsed_pdf'].get("skills", [])
         autofilled_skills = deepcopy(skills)
