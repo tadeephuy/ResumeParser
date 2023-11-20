@@ -12,6 +12,7 @@ Work Experience			work_exp	list of dict
 	Company	Company name	work_company	string
 	Title	Job title at the company	work_title	string
   Responsibilities	Responsibilities, achievements done, written in bullet points, copy from the resume work_responsibilities	list of string
+  Technologies	tools, frameworks, techonologies used in the work experience	technologies	list of string
   Description Short summary of tasks, achievements, technology used, in maximum 30 words work_description	string
 Education			education	list of dict
 	Timeline	From - To	edu_timeline	tuple of int
@@ -23,7 +24,7 @@ Projects			projects	list of dict
 	Timeline	From - To	project_timeline	tuple of int
 	Project name	Project name	project_name	string
 	Descriptions	Description of the project	project_description	string
-Certifications  N/A list of achieved certifications certifications  list of string
+Certifications  N/A list of achieved certifications certifications  string
 Skills			skills or technologies used list of dict
 	Skill name	Name of the skill	skill_name	string
 	YOE	Year of experience, can be inferred	yoe	float
@@ -51,6 +52,7 @@ example = """
         "Optimized existing codebase for performance improvements",
         "Mentored junior developers"
       ],
+      "technologies": "ReAct, Git, Python, Javascript, SQL",
       "work_description": "Led a team of developers in designing and implementing critical features for the flagship product.",
     },
     {
@@ -61,6 +63,7 @@ example = """
         "Developed and maintained backend services",
         "Collaborated with UX/UI designers for front-end development"
       ],
+      "technologies": "Canvas, Figma, CSS, HTML",
       "work_description": "Collaborated with cross-functional teams to deliver high-quality software solutions.",
     }
   ],
@@ -109,7 +112,7 @@ def prompt_to_parse_cv(resume):
     <end>
 
     You are a Senior Recruiter (SR) reading the resume.
-    Parse the resume into the output json file following the example and template.
+    Parse the resume into the output json file, strictly following the example and template.
     Note: the field "responsibilities" should be copied exactly from the resume.
     Note: if the description is not provided, write a summary for the field description.
     

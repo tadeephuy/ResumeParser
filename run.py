@@ -135,7 +135,8 @@ def submit_form():
             "work_company": st.session_state[f"work_company_{i}"],
             "work_title": st.session_state[f"work_title_{i}"],
             "work_description": st.session_state[f"work_description_{i}"],
-            "work_responsibilities": [c[2:] for c in st.session_state[f"work_responsibilities_{i}"].split('\n')]
+            "work_responsibilities": [c[2:] for c in st.session_state[f"work_responsibilities_{i}"].split('\n')],
+            "work_technologies": st.session_state[f"work_technologies_{i}"]
         }
         export_work_exp.append(ewe)
     
@@ -332,6 +333,12 @@ if st.session_state['processed']:
             bc1.button("✍️ Rewrite", on_click=rewrite_resp, args=(i,), key=f"rewrite_button_resp_{i}")
             bc2.button("🔄 Reset", on_click=reset_resp, args=(i,), key=f"reset_button_resp_{i}")            
             
+            
+            # technologies
+            autofilled_work_exp[i]["technologies"] = st.text_area(f"Technologies",
+                                                                work_exp[i].get("technologies", ""),
+                                                                key=f"work_technologies_{i}")
+
             st.markdown("""---""")
 
     with st.expander(label="EDUCATION", expanded=True,):
