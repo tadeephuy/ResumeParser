@@ -60,24 +60,13 @@ def rewrite_resp(i):
 
 def infer_more_skills():
     st.toast("Searching for more skills...", icon="🔎")
-    skills_list = {}
+    export_skills = []
     for i in range(len(autofilled_skills)):
-        skill_name = st.session_state[f"skill_name_{i}"]
-        yoe = st.session_state[f"yoe_{i}"]
-        
-        if skill_name in skills_list:
-            if yoe is not None and (skills_list[skill_name]['yoe'] is None or yoe > skills_list[skill_name]['yoe']):
-                skills_list[skill_name] = {
-                    "skill_name": skill_name,
-                    "yoe": yoe,
-                }
-        else:
-            skills_list[skill_name] = {
-                "skill_name": skill_name,
-                "yoe": yoe,
-            }
-        
-    export_skills = list(skills_list.values())
+        es = {
+            "skill_name": st.session_state[f"skill_name_{i}"],
+            "yoe": st.session_state[f"yoe_{i}"],
+        }
+        export_skills.append(es)
     skills = '\n'.join(f"{c['skill_name']} - {c['yoe']}" for c in export_skills)
     
     prompt = prompt_to_add_skills(skills=skills, resume_json=str(st.session_state['parsed_pdf']))
