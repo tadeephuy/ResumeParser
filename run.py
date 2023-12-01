@@ -10,7 +10,7 @@ import fitz
 import shutil
 from prompt import (prompt_to_parse_cv, prompt_to_rewrite_task, prompt_to_add_skills, prompt_to_write_description,
                     post_parse_cv, post_rewrite_task, post_add_skills, post_write_description)
-from export_resume import create_docx_file
+from export_resume import create_docx_file, post_process
 from langchain.schema import (
     AIMessage, HumanMessage, SystemMessage
 )
@@ -452,7 +452,8 @@ if st.session_state['processed']:
     c1.button("Submit", on_click=submit_form, key="submit")
     if st.session_state['output_json'] is not None:
         # download_data = json.dumps(st.session_state['output_json'])
-        download_data = create_docx_file(st.session_state['output_json'])
+        processed_data = post_process(st.session_state['output_json'])
+        download_data = create_docx_file(processed_data)
         bio = io.BytesIO()
         download_data.save(bio)
         c2.download_button("🖨️ Export file", 

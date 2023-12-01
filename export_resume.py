@@ -3,7 +3,7 @@ from docx import Document
 from docx.shared import Pt, Mm
 from docx.enum.text import WD_COLOR_INDEX
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
-from docx.oxml.shared import OxmlElement,qn
+from docx.oxml.shared import OxmlElement, qn
 
 
 def create_docx_file(data):
@@ -74,10 +74,9 @@ def create_docx_file(data):
         contact = cell_10.add_paragraph('Contact')
         contact_runs = contact.runs
         for run in contact_runs:
-            run.font.size = Pt(20)
+            run.font.size = Pt(18)
             run.font.bold = True
 
-        # Create the hyperlink
         for link in data['links']:
             cell_10.add_paragraph(link, style='Huy List')
 
@@ -85,7 +84,7 @@ def create_docx_file(data):
     exp = cell_11.add_paragraph('Work Experience')
     exp_runs = exp.runs
     for run in exp_runs:
-        run.font.size = Pt(20)
+        run.font.size = Pt(18)
         run.font.bold = True
 
     for exp in data['work_exp']:
@@ -102,6 +101,7 @@ def create_docx_file(data):
         res_runs = res.runs
         for run in res_runs:
             run.font.bold = True
+            run.font.size = Pt(12)
 
         for resp in exp['work_responsibilities']:
             cell_11.add_paragraph(resp, style='Huy List')
@@ -112,6 +112,7 @@ def create_docx_file(data):
             techs_runs = techs.runs
             for run in techs_runs:
                 run.font.bold = True
+                run.font.size = Pt(12)
 
             cell_11.add_paragraph(exp['work_technologies'])
 
@@ -120,7 +121,7 @@ def create_docx_file(data):
         projects = cell_11.add_paragraph('Projects')
         projects_runs = projects.runs
         for run in projects_runs:
-            run.font.size = Pt(20)
+            run.font.size = Pt(18)
             run.font.bold = True
 
         for project in data['projects']:
@@ -136,7 +137,7 @@ def create_docx_file(data):
     ed = cell_10.add_paragraph('Education')
     edu_runs = ed.runs
     for run in edu_runs:
-        run.font.size = Pt(20)
+        run.font.size = Pt(18)
         run.font.bold = True
 
     for edu in data['education']:
@@ -145,22 +146,22 @@ def create_docx_file(data):
         for run in edu_details_runs:
             run.font.bold = True
     
-    # Add Languages
+    # Add languages
     lang = cell_10.add_paragraph('Languages')
     lang_runs = lang.runs
     for run in lang_runs:
-        run.font.size = Pt(20)
+        run.font.size = Pt(18)
         run.font.bold = True
 
     for lang in data['languages']:
         cell_10.add_paragraph(f"{lang['lang']}: {lang['lang_lvl']}", style='Huy List')
 
-    # Add certifcations
+    # Add certifications
     if len(data['certifications']) > 0:
         certs = cell_10.add_paragraph('Certifications')
         certs_runs = certs.runs
         for run in certs_runs:
-            run.font.size = Pt(20)
+            run.font.size = Pt(18)
             run.font.bold = True
 
         for cert in data['certifications']:
@@ -171,7 +172,7 @@ def create_docx_file(data):
         skills = cell_10.add_paragraph('Skills')
         skills_runs = skills.runs
         for run in skills_runs:
-            run.font.size = Pt(20)
+            run.font.size = Pt(18)
             run.font.bold = True
 
         for skill in data['skills']:
@@ -193,8 +194,32 @@ def create_docx_file(data):
     table1._tbl.tblPr.append(borders)
     return doc
 
+def post_process(data):
+    skills = {}
+
+    for skill in data['skills']:
+        skill_name = skill['skill_name']
+        yoe = skill['yoe']
+
+        if skill_name in skills:
+            if yoe is not None and skills[skill_name]['yoe'] is None:
+                skills[skill_name] = skill
+            elif yoe is not None and skills[skill_name]['yoe'] is not None and yoe > skills[skill_name]['yoe']:
+                skills[skill_name] = skill
+        else:
+            skills[skill_name] = skill
+
+    # Convert back to a list
+    final_skills = list(skills.values())
+
+    # Update skills field in data
+    data['skills'] = final_skills
+
+    return data
+
 if __name__ == '__main__':
     with open('.\export_doc.json', 'r') as f:
         data = json.load(f)
+    data = post_process(data)
     doc = create_docx_file(data)
     doc.save('export_resume.docx')
