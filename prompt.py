@@ -12,7 +12,7 @@ Work Experience			work_exp	list of dict
 	Company	Company name	work_company	string
 	Title	Job title at the company	work_title	string
   Responsibilities	Responsibilities, achievements done, written in bullet points, copy from the resume work_responsibilities	list of string
-  Technologies	tools, frameworks, techonologies used in the work experience	technologies	list of string
+  Technologies	tools, frameworks, technologies used in the work experience	technologies	list of string
   Description Short summary of tasks, achievements, technology used, in maximum 30 words work_description	string
 Education			education	list of dict
 	Timeline	From - To	edu_timeline	tuple of int
@@ -40,8 +40,8 @@ example = """
   ],
   "languages": [
     {"lang": "Vietnamese", "lang_lvl": "native"},
-    {"lang": "English", "lang_lvl": "fluent"},
-  ]
+    {"lang": "English", "lang_lvl": "fluent"}
+  ],
   "work_exp": [
     {
       "work_timeline": [2018, 2023],
@@ -52,8 +52,8 @@ example = """
         "Optimized existing codebase for performance improvements",
         "Mentored junior developers"
       ],
-      "technologies": "ReAct, Git, Python, Javascript, SQL",
-      "work_description": "Led a team of developers in designing and implementing critical features for the flagship product.",
+      "work_technologies": "ReAct, Git, Python, Javascript, SQL",
+      "work_description": "Led a team of developers in designing and implementing critical features for the flagship product."
     },
     {
       "work_timeline": [2015, 2018],
@@ -63,8 +63,8 @@ example = """
         "Developed and maintained backend services",
         "Collaborated with UX/UI designers for front-end development"
       ],
-      "technologies": "Canvas, Figma, CSS, HTML",
-      "work_description": "Collaborated with cross-functional teams to deliver high-quality software solutions.",
+      "work_technologies": "Canvas, Figma, CSS, HTML",
+      "work_description": "Collaborated with cross-functional teams to deliver high-quality software solutions."
     }
   ],
   "education": [
@@ -80,13 +80,19 @@ example = """
     {
       "project_timeline": [2020, 2021],
       "project_name": "Mobile Expense Tracker App",
+      "project_responsibilities": [
+        "Designed and implemented new features",
+        "Optimized existing codebase for performance improvements",
+        "Mentored junior developers"
+      ],
+      "project_technologies": "ReAct, Git, Python, Javascript, SQL",
       "project_description": "Designed and developed a mobile app for tracking personal expenses."
     }
   ],
   "certifications": [
     "IELTS 9.0",
-    "2023: PMI Agile Certified Practicioner"
-  ]
+    "2023: PMI Agile Certified Practitioner"
+  ],
   "skills": [
     {"skill_name": "JavaScript", "yoe": 5},
     {"skill_name": "React", "yoe": 3}
@@ -134,7 +140,7 @@ def prompt_to_write_description(resp, title, company, description):
     You are a career consultant.
     You are improving the work experience section in your customer's resume.
     Please rewrite a summary description of the work experience from responsibilities, job title and company name.
-    Rewrite it to make it more professional, highlighting important details, refering to the job title, description and the company.
+    Rewrite it to make it more professional, highlighting important details, referring to the job title, description and the company.
     Write in 1 concise paragraph, do not use subject, strictly no more than 50 words.
     
     title: {title}
@@ -156,8 +162,8 @@ def prompt_to_rewrite_task(resp, title, company, description):
     You are a career consultant.
     You are improving the work experience section in your customer's resume.
     The customer wrote the tasks too short.
-    If the number of responsibilities is less than 3, come up with at least 2 new responsibilities, refering to the description.
-    Rewrite it to make it more professional, refering to the job title, description and the company.
+    If the number of responsibilities is less than 3, come up with at least 2 new responsibilities, referring to the description.
+    Rewrite it to make it more professional, referring to the job title, description and the company.
     Only rewrite the responsibilities, write in bullet points.
     The number of the final responsibilities must be at least 4.
     
