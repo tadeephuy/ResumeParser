@@ -125,13 +125,33 @@ def create_docx_file(data):
             run.font.bold = True
 
         for project in data['projects']:
-            details = cell_11.add_paragraph(f" {project['project_name']}")
+            details = cell_11.add_paragraph(f"{project['project_timeline'][0]} - {project['project_timeline'][1]} | {project['project_name']}")
             details_runs = details.runs
             for run in details_runs:
                 run.font.bold = True
+                run.font.size = Pt(14)
 
             cell_11.add_paragraph(project['project_description'])
 
+            # Add responsibilities
+            res = cell_11.add_paragraph('Responsibilities: ')
+            res_runs = res.runs
+            for run in res_runs:
+                run.font.bold = True
+                run.font.size = Pt(12)
+
+            for resp in project['project_responsibilities']:
+                cell_11.add_paragraph(resp, style='Huy List')
+            
+            # Add technologies
+            if len(project['project_technologies']) > 0:
+                techs = cell_11.add_paragraph('Technologies: ')
+                techs_runs = techs.runs
+                for run in techs_runs:
+                    run.font.bold = True
+                    run.font.size = Pt(12)
+
+                cell_11.add_paragraph(project['project_technologies'])
 
     # Add education
     ed = cell_10.add_paragraph('Education')

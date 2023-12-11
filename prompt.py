@@ -23,6 +23,8 @@ Education			education	list of dict
 Projects			projects	list of dict
 	Timeline	From - To	project_timeline	tuple of int
 	Project name	Project name	project_name	string
+  Responsibilities	Responsibilities, achievements done, written in bullet points, copy from the resume project_responsibilities	list of string
+  Technologies	tools, frameworks, technologies used in the projects technologies	list of string
 	Descriptions	Description of the project	project_description	string
 Certifications  N/A list of achieved certifications certifications  string
 Skills			skills or technologies used list of dict
@@ -80,6 +82,12 @@ example = """
     {
       "project_timeline": [2020, 2021],
       "project_name": "Mobile Expense Tracker App",
+      "project_responsibilities": [
+        "Designed and implemented new features",
+        "Optimized existing codebase for performance improvements",
+        "Mentored junior developers"
+      ],
+      "project_technologies": "ReAct, Git, Javascript",
       "project_description": "Designed and developed a mobile app for tracking personal expenses."
     }
   ],
