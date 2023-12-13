@@ -124,10 +124,9 @@ def prompt_to_parse_cv(resume):
     return prompt
 
 def post_parse_cv(output):
-    idx = output.index('{')
-    if idx < 7:
-        return output[idx:]
-    return output
+  start = output.find('{')
+  end = output.rfind('}') + 1
+  return output[start:end]
 
 def prompt_to_write_description(resp, title, company, description):
     prompt = f"""
