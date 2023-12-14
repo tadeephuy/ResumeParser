@@ -15,9 +15,10 @@ from langchain.schema import (
     AIMessage, HumanMessage, SystemMessage
 )
 from langchain.chat_models import ChatOpenAI
+from word_document import WordDocProcessor
 
 # initialize chat model
-chat = ChatOpenAI(model="gpt-3.5-turbo-16k", temperature=0.0, 
+chat = ChatOpenAI(model="gpt-4-1106-preview", temperature=0.0, 
                   openai_api_key=st.secrets['openai_api_key'])
 
 def write_description(i):
@@ -245,7 +246,7 @@ st.markdown(
 with st.sidebar:
     # resume upload
     uploaded_file = st.file_uploader("Upload Resume", on_change=uploader_callback)
-    if uploaded_file is not None:       
+    if uploaded_file is not None and uploaded_file.name.endswith('.pdf'):       
         display_pdf(uploaded_file=uploaded_file)
 
 if st.session_state['processed']:
@@ -256,13 +257,15 @@ elif (uploaded_file is not None):
 if (uploaded_file is not None) and (not(st.session_state['processed'])):
     # extract_text_from_pdf(uploaded_file=uploaded_file)
     status.write("📝 Extracting text...")
-    pdf = PdfReader(uploaded_file)
-    pdf = '\n'.join([pdf.pages[c].extract_text() for c in range(len(pdf.pages))])
-    
+    if uploaded_file.name.endswith('.docx') or uploaded_file.name.endswith('.doc'):
+        document = WordDocProcessor(uploaded_file.getvalue()).load_doc()
+    else:
+        document = PdfReader(uploaded_file)
+        document = '\n'.join([document.pages[c].extract_text() for c in range(len(document.pages))])
     status.write("👩‍💻 Analyzing the resume...")
     parsed_cv = chat([
         SystemMessage(content="You are a senior recruiter."),
-        HumanMessage(content=prompt_to_parse_cv(resume=pdf))
+        HumanMessage(content=prompt_to_parse_cv(resume=document))
     ])
     parsed_cv = post_parse_cv(parsed_cv.content)
     parsed_cv = json.loads(parsed_cv)
