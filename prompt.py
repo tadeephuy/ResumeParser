@@ -12,7 +12,7 @@ Work Experience			work_exp	list of dict
 	Company	Company name	work_company	string
 	Title	Job title at the company	work_title	string
   Responsibilities	Responsibilities, achievements done, written in bullet points, copy from the resume work_responsibilities	list of string
-  Technologies	tools, frameworks, techonologies used in the work experience	technologies	list of string
+  Technologies	tools, frameworks, techonologies used in the work experience	technologies  string
   Description Short summary of tasks, achievements, technology used, in maximum 30 words work_description	string
 Education			education	list of dict
 	Timeline	From - To	edu_timeline	tuple of int
