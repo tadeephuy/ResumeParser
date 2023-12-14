@@ -257,11 +257,11 @@ elif (uploaded_file is not None):
 if (uploaded_file is not None) and (not(st.session_state['processed'])):
     # extract_text_from_pdf(uploaded_file=uploaded_file)
     status.write("📝 Extracting text...")
-    if uploaded_file.name.endswith('.pdf'):
+    if uploaded_file.name.endswith('.docx') or uploaded_file.name.endswith('.doc'):
+        document = WordDocProcessor(uploaded_file.getvalue()).load_doc()
+    else:
         document = PdfReader(uploaded_file)
         document = '\n'.join([document.pages[c].extract_text() for c in range(len(document.pages))])
-    else:
-        document = WordDocProcessor(uploaded_file.getvalue()).load_doc()
     status.write("👩‍💻 Analyzing the resume...")
     parsed_cv = chat([
         SystemMessage(content="You are a senior recruiter."),
