@@ -1,1 +1,5 @@
-./streamlit/secrets.toml
+.streamlit
+.vscode
+output/*
+tmp_output/*
+*.pyc
