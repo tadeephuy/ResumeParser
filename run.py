@@ -158,6 +158,8 @@ def submit_form():
             "project_timeline": [st.session_state[f"project_timeline_from_{i}"], st.session_state[f"project_timeline_to_{i}"]],
             "project_name": st.session_state[f"project_name_{i}"],
             "project_description": st.session_state[f"project_description_{i}"],
+            "project_responsibilities": [c[2:] for c in st.session_state[f"project_responsibilities_{i}"].split('\n')],
+            "project_technologies": st.session_state[f"project_technologies_{i}"]
         }
         export_projects.append(ep)
     
@@ -413,6 +415,20 @@ if st.session_state['processed']:
                                                                 height=50,
                                                                 key=f"project_description_{i}",)
 
+            # responsibilities
+            resps_list = projects[i].get("project_responsibilities", [])
+            height = min(50*len(resps_list) if len(resps_list) > 0 else 10, 300)
+            
+            resps_str = "\n".join([f"- {c}" for c in resps_list])
+            autofilled_projects[i]["project_responsibilities"] = st.text_area(f"Responsibilities",
+                                                                    resps_str,
+                                                                    height=height,
+                                                                    key=f"project_responsibilities_{i}")
+            
+            # technologies
+            autofilled_projects[i]["project_technologies"] = st.text_area(f"Technologies",
+                                                                projects[i].get("project_technologies", ""),
+                                                                key=f"project_technologies_{i}")
 
     with st.expander(label="SKILLS", expanded=True,):
         certifications = st.session_state['parsed_pdf'].get('certifications', [])
