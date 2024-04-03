@@ -220,7 +220,7 @@ def remove_none_value(d):
         for k,v in d.items():
             if v is None:
                 d[k] = ""
-            elif isinstance(v, (dict, list)]):
+            elif isinstance(v, (dict, list)):
                 d[k] = remove_none_value(v)
 
     elif isinstance(d, list):
