@@ -227,7 +227,7 @@ def remove_none_value(d):
         for i,c in enumerate(d):
             if c is None:
                 d[i] = ""
-            elif isinstance(v, (dict, list)):
+            elif isinstance(c, (dict, list)):
                 d[i] = remove_none_value(c) 
     return d
 
