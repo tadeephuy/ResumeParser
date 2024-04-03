@@ -214,26 +214,47 @@ def create_docx_file(data):
     table1._tbl.tblPr.append(borders)
     return doc
 
+def remove_none_value(d):
+    if isinstance(d, dict):
+        for k,v in d.items():
+            if v is None:
+                d[k] = ""
+            elif isinstance(v, [dict, list]):
+                d[k] = remove_none_value(v)
+
+    elif isinstance(d, list):
+        for i,c in enumerate(d):
+            if c is None:
+                d[i] = ""
+            elif isinstance(v, [dict, list]):
+                d[i] = remove_none_value(c) 
+    return d
+
 def post_process(data):
-    skills = {}
+    # skills = {}
 
-    for skill in data['skills']:
-        skill_name = skill['skill_name']
-        yoe = skill['yoe']
+    # for skill in data['skills']:
+    #     skill_name = skill['skill_name']
+    #     yoe = skill['yoe']
 
-        if skill_name in skills:
-            if yoe is not None and skills[skill_name]['yoe'] is None:
-                skills[skill_name] = skill
-            elif yoe is not None and skills[skill_name]['yoe'] is not None and yoe > skills[skill_name]['yoe']:
-                skills[skill_name] = skill
-        else:
-            skills[skill_name] = skill
+    #     if skill_name in skills:
+    #         if yoe is not None and skills[skill_name]['yoe'] is None:
+    #             skills[skill_name] = skill
+    #         elif yoe is not None and skills[skill_name]['yoe'] is not None and yoe > skills[skill_name]['yoe']:
+    #             skills[skill_name] = skill
+    #     else:
+    #         skills[skill_name] = skill
 
-    # Convert back to a list
-    final_skills = list(skills.values())
+    # # Convert back to a list
+    # final_skills = list(skills.values())
 
-    # Update skills field in data
-    data['skills'] = final_skills
+    # # Update skills field in data
+    # data['skills'] = final_skills
+
+    """
+    remove NONE
+    """
+    data = remove_none_value(data)
 
     return data
 
