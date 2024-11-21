@@ -18,7 +18,7 @@ from langchain.chat_models import ChatOpenAI
 from word_document import WordDocProcessor
 
 # initialize chat model
-chat = ChatOpenAI(model="gpt-4-1106-preview", temperature=0.0, 
+chat = ChatOpenAI(model="gpt-4o", temperature=0.0, 
                   openai_api_key=st.secrets['openai_api_key'])
 
 def write_description(i):
@@ -332,7 +332,7 @@ if st.session_state['processed']:
 
             # responsibilities
             resps_list = work_exp[i].get("work_responsibilities", [])
-            height = min(50*len(resps_list) if len(resps_list) > 0 else 10, 300)
+            height = min(100*len(resps_list) if len(resps_list) > 0 else 100, 300)
             
             resps_str = "\n".join([f"- {c}" for c in resps_list])
             autofilled_work_exp[i]["work_responsibilities"] = st.text_area(f"Responsibilities",
@@ -385,7 +385,7 @@ if st.session_state['processed']:
                 # description
                 autofilled_edus[i]["edu_description"] = st.text_area(f"Description",
                                                                 edus[i].get("edu_description", ""),
-                                                                height=50,
+                                                                height=100,
                                                                 key=f"edu_description_{i}",)
                 st.markdown("""---""")
 
@@ -412,12 +412,12 @@ if st.session_state['processed']:
                 # description
                 autofilled_projects[i]["project_description"] = st.text_area(f"Description",
                                                                 projects[i].get("project_description", ""),
-                                                                height=50,
+                                                                height=100,
                                                                 key=f"project_description_{i}",)
 
                 # responsibilities
                 resps_list = projects[i].get("project_responsibilities", [])
-                height = min(50*len(resps_list) if len(resps_list) > 0 else 10, 300)
+                height = min(100*len(resps_list) if len(resps_list) > 0 else 100, 300)
                 
                 resps_str = "\n".join([f"- {c}" for c in resps_list])
                 autofilled_projects[i]["project_responsibilities"] = st.text_area(f"Responsibilities",
@@ -432,7 +432,7 @@ if st.session_state['processed']:
 
     with st.expander(label="SKILLS", expanded=True,):
         certifications = st.session_state['parsed_pdf'].get('certifications', [])
-        height = min(50*len(certifications) if len(certifications) > 0 else 10, 300)
+        height = min(100*len(certifications) if len(certifications) > 0 else 100, 300)
         certifications = st.text_area("Certifications", "\n".join(certifications),
                                       height=height,
                                       key="certifications")
