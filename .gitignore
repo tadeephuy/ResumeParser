@@ -3,3 +3,4 @@
 output/*
 tmp_output/*
 *.pyc
+tests/*
