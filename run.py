@@ -364,11 +364,14 @@ if st.session_state['processed']:
 
                 # timeline
                 c1, c2 = st.columns(2)
+                edu_timeline = edus[i].get("edu_timeline", [None,None])
+                if len(edu_timeline) < 2:
+                    edu_timeline = [None, None]
                 w_f = c1.text_input("From",
-                                    edus[i].get("edu_timeline", [None,None])[0], 
+                                    edu_timeline[0], 
                                     key=f"edu_timeline_from_{i}")
                 w_t = c2.text_input("To", 
-                                    edus[i].get("edu_timeline", [None,None])[-1], 
+                                    edu_timeline[-1], 
                                     key=f"edu_timeline_to_{i}")
                 autofilled_edus[i]["edu_timeline"] = [w_f, w_t]
                 
