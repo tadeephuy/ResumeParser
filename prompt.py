@@ -23,7 +23,7 @@ Education			education	list of dict
 Projects			projects	list of dict
 	Timeline	From - To	project_timeline	tuple of int
 	Project name	Project name	project_name	string
-  Responsibilities	Responsibilities, achievements done, written in bullet points, copy from the resume project_responsibilities	string
+  Responsibilities	Responsibilities, achievements done, written in bullet points, copy from the resume project_responsibilities	list of string
   Technologies	tools, frameworks, technologies used in the projects technologies	string
 	Descriptions	Description of the project	project_description	string
 Certifications  N/A list of achieved certifications certifications  string
