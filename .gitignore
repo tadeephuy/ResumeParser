@@ -1,5 +1,6 @@
 .streamlit
 .vscode
+.devcontainer
 output/*
 tmp_output/*
 *.pyc
