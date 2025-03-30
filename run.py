@@ -21,6 +21,39 @@ from word_document import WordDocProcessor
 chat = ChatOpenAI(model="gpt-4o", temperature=0.0, 
                   openai_api_key=st.secrets['openai_api_key'])
 
+def extract_text_from_pdf_llama(uploaded_file):
+    status.write("📝 Extracting text...")
+    # Create a temporary file to store the uploaded content
+    import tempfile
+    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as temp_file:
+        temp_file.write(uploaded_file.getvalue())
+        temp_file_path = temp_file.name
+    
+    try:
+        # Initialize LlamaParse and extract text
+        from llama_parse import LlamaParse
+        parser = LlamaParse(api_key=st.secrets['llama_api_key'], 
+                            result_type="text")
+        documents = parser.load_data(temp_file_path)
+        pdf = '\n'.join(doc.text for doc in documents)
+        
+        status.write("👩‍💻 Analyzing the resume ...")
+        parsed_cv = chat([
+            SystemMessage(content="You are a senior recruiter."),
+            HumanMessage(content=prompt_to_parse_cv(resume=pdf))
+        ])
+        parsed_cv = post_parse_cv(parsed_cv.content)
+        status.write("✍️ Filling the forms ...")
+        parsed_cv = json.loads(parsed_cv)
+        st.session_state['parsed_pdf'] = parsed_cv
+        st.session_state['processed'] = True
+        
+    finally:
+        # Clean up temporary file
+        os.unlink(temp_file_path)
+        
+    status.update(label="Completed", state="complete", expanded=False)
+
 def write_description(i):
     st.toast("Summarizing description ...", icon='✍️')
     
@@ -80,26 +113,26 @@ def infer_more_skills():
     st.session_state['new_skills'] = new_skills
 
 
-def extract_text_from_pdf(uploaded_file):
-    with st.status("Processing the resume ... ", expanded=True) as status:
-        status.write("📑 Extracting text ...")
-        pdf = PdfReader(uploaded_file)
-        pdf = '\n'.join([pdf.pages[c].extract_text() for c in range(len(pdf.pages))])
+# def extract_text_from_pdf(uploaded_file):
+#     with st.status("Processing the resume ... ", expanded=True) as status:
+#         status.write("📑 Extracting text ...")
+#         pdf = PdfReader(uploaded_file)
+#         pdf = '\n'.join([pdf.pages[c].extract_text() for c in range(len(pdf.pages))])
         
-        status.write("👩‍💻 Analyzing the resume ...")
-        parsed_cv = chat([
-            SystemMessage(content="You are a senior recruiter."),
-            HumanMessage(content=prompt_to_parse_cv(resume=pdf))
-        ])
-        parsed_cv = post_parse_cv(parsed_cv.content)
-        status.write("✍️ Filling the forms ...")
-        parsed_cv = json.loads(parsed_cv)
-        # with open('./sample.json', 'rb') as f:
-        #     parsed_cv = json.load(f)
-        st.session_state['parsed_pdf'] = parsed_cv
-        st.session_state['processed'] = True
+#         status.write("👩‍💻 Analyzing the resume ...")
+#         parsed_cv = chat([
+#             SystemMessage(content="You are a senior recruiter."),
+#             HumanMessage(content=prompt_to_parse_cv(resume=pdf))
+#         ])
+#         parsed_cv = post_parse_cv(parsed_cv.content)
+#         status.write("✍️ Filling the forms ...")
+#         parsed_cv = json.loads(parsed_cv)
+#         # with open('./sample.json', 'rb') as f:
+#         #     parsed_cv = json.load(f)
+#         st.session_state['parsed_pdf'] = parsed_cv
+#         st.session_state['processed'] = True
 
-        status.update(label="Completed", state="complete", expanded=False)
+#         status.update(label="Completed", state="complete", expanded=False)
 
 
 def display_pdf(uploaded_file):
@@ -257,22 +290,21 @@ elif (uploaded_file is not None):
     status = st.status("Processing the resume ... ", expanded=True) 
 
 if (uploaded_file is not None) and (not(st.session_state['processed'])):
-    # extract_text_from_pdf(uploaded_file=uploaded_file)
-    status.write("📝 Extracting text...")
-    if uploaded_file.name.endswith('.docx') or uploaded_file.name.endswith('.doc'):
-        document = WordDocProcessor(uploaded_file.getvalue()).load_doc()
-    else:
-        document = PdfReader(uploaded_file)
-        document = '\n'.join([document.pages[c].extract_text() for c in range(len(document.pages))])
-    status.write("👩‍💻 Analyzing the resume...")
-    parsed_cv = chat([
-        SystemMessage(content="You are a senior recruiter."),
-        HumanMessage(content=prompt_to_parse_cv(resume=document))
-    ])
-    parsed_cv = post_parse_cv(parsed_cv.content)
-    parsed_cv = json.loads(parsed_cv)
-    st.session_state['parsed_pdf'] = parsed_cv
-    st.session_state['processed'] = True
+    # if uploaded_file.name.endswith('.docx') or uploaded_file.name.endswith('.doc'):
+    #     document = WordDocProcessor(uploaded_file.getvalue())
+    #     document = document.load_doc()
+    #     status.write("👩‍💻 Analyzing the resume...")
+    #     parsed_cv = chat([
+    #         SystemMessage(content="You are a senior recruiter."),
+    #         HumanMessage(content=prompt_to_parse_cv(resume=document))
+    #     ])
+    #     parsed_cv = post_parse_cv(parsed_cv.content)
+    #     parsed_cv = json.loads(parsed_cv)
+    #     st.session_state['parsed_pdf'] = parsed_cv
+    #     st.session_state['processed'] = True
+    # else:
+    #     extract_text_from_pdf_llama(uploaded_file)
+    extract_text_from_pdf_llama(uploaded_file)
 
 if st.session_state['processed']:
     status.write("✍️ Filling the forms ...")
